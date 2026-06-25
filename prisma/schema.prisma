@@ -20,6 +20,22 @@ model Category {
   @@map("categories")
 }
 
+model Outlet {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  latitude  Float
+  longitude Float
+  phone     String?
+  imageUrl  String?
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("outlets")
+}
+
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
