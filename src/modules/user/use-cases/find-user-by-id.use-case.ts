@@ -1,19 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { UserRepository } from '../repository/user.repository';
 import { UserResponseDto } from '../dto';
 import { UserMapper } from '../mapper/user.mapper';
 
-const USER_INCLUDE = { role: true, profile: true } as const;
-
 @Injectable()
 export class FindUserByIdUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async execute(id: string): Promise<UserResponseDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: USER_INCLUDE,
-    });
+    const user = await this.userRepository.findByIdWithRelations(id);
 
     if (!user || user.deletedAt) {
       throw new NotFoundException('User not found');

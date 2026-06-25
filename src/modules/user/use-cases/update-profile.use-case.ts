@@ -1,13 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { UserRepository } from '../repository/user.repository';
 import { UpdateProfileDto, UserResponseDto } from '../dto';
 import { UserMapper } from '../mapper/user.mapper';
 
-const USER_INCLUDE = { role: true, profile: true } as const;
-
 @Injectable()
 export class UpdateProfileUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: {
     userId: string;
@@ -15,34 +13,17 @@ export class UpdateProfileUseCase {
   }): Promise<UserResponseDto> {
     const { userId, dto } = input;
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
+    const user = await this.userRepository.findById(userId);
     if (!user || user.deletedAt) {
       throw new NotFoundException('User not found');
     }
 
     const { fullName, phone, address } = dto;
 
-    await this.prisma.profile.upsert({
-      where: { userId },
-      update: {
-        ...(fullName !== undefined && { fullName }),
-        ...(phone !== undefined && { phone }),
-        ...(address !== undefined && { address }),
-      },
-      create: {
-        userId,
-        fullName: fullName ?? '',
-        phone,
-        address,
-      },
-    });
-
-    const updated = await this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      include: USER_INCLUDE,
+    const updated = await this.userRepository.updateWithProfile(userId, {}, {
+      fullName,
+      phone,
+      address,
     });
 
     return UserMapper.toResponseDto(updated);

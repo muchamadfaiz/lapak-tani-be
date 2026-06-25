@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { AuthRepository } from '../repository/auth.repository';
 
 @Injectable()
 export class LogoutUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly authRepository: AuthRepository) {}
 
   async execute(userId: string): Promise<void> {
-    await this.prisma.refreshToken.updateMany({
-      where: { userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    await this.authRepository.revokeAllRefreshTokens(userId);
   }
 }

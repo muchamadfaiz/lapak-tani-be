@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PageMetaDto, PageOptionsDto } from '../../../common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { UserRepository } from '../repository/user.repository';
 import { UserResponseDto } from '../dto';
 import { UserMapper } from '../mapper/user.mapper';
 
-const USER_INCLUDE = { role: true, profile: true } as const;
-
 @Injectable()
 export class FindAllUsersUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async execute(
     query: PageOptionsDto,
@@ -18,16 +16,15 @@ export class FindAllUsersUseCase {
     const where = { deletedAt: null, role: { name: { not: 'ADMIN' } } };
 
     const [users, totalData] = await Promise.all([
-      this.prisma.user.findMany({
+      this.userRepository.findManyWithRelations({
         where,
-        include: USER_INCLUDE,
         skip: query.skip,
         take: query.limit,
         orderBy: query.sortBy
           ? { [query.sortBy]: query.order }
           : { createdAt: query.order },
       }),
-      this.prisma.user.count({ where }),
+      this.userRepository.count(where),
     ]);
 
     const data = UserMapper.toResponseDtoList(users);

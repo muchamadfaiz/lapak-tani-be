@@ -1,22 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'crypto';
-import { PrismaService } from '../../../prisma/prisma.service';
-import { EmailService } from '../../email/email.service';
+import { AuthRepository } from '../repository/auth.repository';
+import { EmailContract } from '../../email/email.contract';
 import { ForgotPasswordDto } from '../dto';
+import { UserContract } from '../../user/user.contract';
 
 @Injectable()
 export class ForgotPasswordUseCase {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    private readonly authRepository: AuthRepository,
+    private readonly emailContract: EmailContract,
     private readonly configService: ConfigService,
+    private readonly userContract: UserContract,
   ) {}
 
   async execute(dto: ForgotPasswordDto): Promise<void> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    const user = await this.userContract.findByEmailForAuth(dto.email);
 
     // Always return OK — don't reveal if email exists
     if (!user || user.deletedAt || !user.isActive) {
@@ -28,12 +28,10 @@ export class ForgotPasswordUseCase {
 
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
-    await this.prisma.passwordResetToken.create({
-      data: {
-        userId: user.id,
-        token: hashedToken,
-        expiresAt,
-      },
+    await this.authRepository.createPasswordResetToken({
+      userId: user.id,
+      token: hashedToken,
+      expiresAt,
     });
 
     const frontendUrl = this.configService.get<string>(
@@ -42,6 +40,6 @@ export class ForgotPasswordUseCase {
     );
     const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
 
-    await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
+    await this.emailContract.sendPasswordResetEmail(user.email, resetUrl);
   }
 }

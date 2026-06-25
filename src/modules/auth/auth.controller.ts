@@ -36,7 +36,7 @@ import {
   VerifyEmailUseCase,
   ResendVerificationUseCase,
 } from './use-cases';
-import { FindUserByIdUseCase } from '../user/use-cases';
+import { UserContract } from '../user';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -50,7 +50,7 @@ export class AuthController {
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly resendVerificationUseCase: ResendVerificationUseCase,
-    private readonly findUserByIdUseCase: FindUserByIdUseCase,
+    private readonly userContract: UserContract,
   ) {}
 
   @ApiBearerAuth()
@@ -60,7 +60,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ResponseMessage('Success get profile')
   me(@CurrentUser('id') userId: string) {
-    return this.findUserByIdUseCase.execute(userId);
+    return this.userContract.getById(userId);
   }
 
   // CATATAN KEAMANAN: endpoint publik `POST /auth/register` sengaja DINONAKTIFKAN

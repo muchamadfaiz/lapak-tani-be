@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'crypto';
-import { PrismaService } from '../../../prisma/prisma.service';
-import { EmailService } from '../../email/email.service';
+import { AuthRepository } from '../repository/auth.repository';
+import { EmailContract } from '../../email/email.contract';
 
 @Injectable()
 export class SendVerificationEmailUseCase {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    private readonly authRepository: AuthRepository,
+    private readonly emailContract: EmailContract,
     private readonly configService: ConfigService,
   ) {}
 
@@ -18,12 +18,10 @@ export class SendVerificationEmailUseCase {
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await this.prisma.emailVerificationToken.create({
-      data: {
-        userId,
-        token: hashedToken,
-        expiresAt,
-      },
+    await this.authRepository.createEmailVerificationToken({
+      userId,
+      token: hashedToken,
+      expiresAt,
     });
 
     const frontendUrl = this.configService.get<string>(
@@ -32,6 +30,6 @@ export class SendVerificationEmailUseCase {
     );
     const verificationUrl = `${frontendUrl}/verify-email?token=${rawToken}`;
 
-    await this.emailService.sendVerificationEmail(email, verificationUrl);
+    await this.emailContract.sendVerificationEmail(email, verificationUrl);
   }
 }

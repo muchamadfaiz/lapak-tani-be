@@ -4,12 +4,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { AuthRepository } from '../repository/auth.repository';
 import { ChangePasswordDto } from '../dto';
+import { UserContract } from '../../user/user.contract';
 
 @Injectable()
 export class ChangePasswordUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly userContract: UserContract,
+  ) {}
 
   async execute(input: {
     userId: string;
@@ -17,9 +21,7 @@ export class ChangePasswordUseCase {
   }): Promise<void> {
     const { userId, dto } = input;
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.userContract.findByIdForAuth(userId);
 
     if (!user || user.deletedAt) {
       throw new NotFoundException('User not found');
@@ -27,7 +29,7 @@ export class ChangePasswordUseCase {
 
     const isOldPasswordValid = await bcrypt.compare(
       dto.oldPassword,
-      user.password,
+      user.passwordHash,
     );
 
     if (!isOldPasswordValid) {
@@ -36,18 +38,9 @@ export class ChangePasswordUseCase {
 
     const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        password: hashedPassword,
-        passwordChangedAt: new Date(),
-      },
-    });
+    await this.userContract.updatePassword(userId, hashedPassword);
 
     // Revoke all refresh tokens for security
-    await this.prisma.refreshToken.updateMany({
-      where: { userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    await this.authRepository.revokeAllRefreshTokens(userId);
   }
 }

@@ -3,13 +3,13 @@ import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { createHash } from 'crypto';
 import jwtConfig from '../../../config/jwt.config';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { AuthRepository } from '../repository/auth.repository';
 import { JwtPayload } from '../strategies/jwt.strategy';
 
 @Injectable()
 export class TokenService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
     @Inject(jwtConfig.KEY)
     private readonly jwtCfg: ConfigType<typeof jwtConfig>,
@@ -38,12 +38,10 @@ export class TokenService {
         this.parseExpiration(this.jwtCfg.refreshExpiration as string),
     );
 
-    await this.prisma.refreshToken.create({
-      data: {
-        token: hashedToken,
-        userId,
-        expiredAt,
-      },
+    await this.authRepository.createRefreshToken({
+      token: hashedToken,
+      userId,
+      expiredAt,
     });
   }
 

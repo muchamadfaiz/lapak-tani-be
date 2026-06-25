@@ -2,15 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
+import { EmailContract } from './email.contract';
 
 @Injectable()
-export class EmailService {
+export class EmailService extends EmailContract {
   private readonly logger = new Logger(EmailService.name);
   private transporter: Transporter | null = null;
   private readonly enabled: boolean;
   private readonly from: string;
 
   constructor(private readonly configService: ConfigService) {
+    super();
     this.enabled = this.configService.get<boolean>('email.enabled', false);
     this.from = this.configService.get<string>('email.from', 'noreply@app.com');
 

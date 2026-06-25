@@ -1,13 +1,9 @@
-import { Prisma } from '@prisma/client';
 import { AuthResponseDto } from '../dto';
-
-type UserWithRelations = Prisma.UserGetPayload<{
-  include: { role: true; profile: true };
-}>;
+import { UserForAuth } from '../../user/user.contract';
 
 export class AuthMapper {
   static toResponseDto(
-    user: UserWithRelations,
+    user: UserForAuth,
     accessToken: string,
     refreshToken: string,
   ): AuthResponseDto {
@@ -17,7 +13,7 @@ export class AuthMapper {
       user: {
         id: user.id,
         email: user.email,
-        fullName: user.profile?.fullName ?? '',
+        fullName: user.fullName,
         role: user.role.name,
       },
     };

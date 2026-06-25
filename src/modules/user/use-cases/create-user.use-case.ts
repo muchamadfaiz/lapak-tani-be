@@ -1,29 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { UserRepository } from '../repository/user.repository';
 import { CreateUserDto, UserResponseDto } from '../dto';
 import { UserMapper } from '../mapper/user.mapper';
 
-const USER_INCLUDE = { role: true, profile: true } as const;
-
 @Injectable()
 export class CreateUserUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async execute(dto: CreateUserDto): Promise<UserResponseDto> {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-
+    const existingUser = await this.userRepository.findByEmail(dto.email);
     if (existingUser) {
       throw new BadRequestException('Email already exists');
     }
 
     let roleId = dto.roleId;
     if (!roleId) {
-      const defaultRole = await this.prisma.role.findUnique({
-        where: { name: 'USER' },
-      });
+      const defaultRole = await this.userRepository.findRoleByName('USER');
       if (!defaultRole) {
         throw new BadRequestException(
           'Default role not found. Run seed first.',
@@ -34,29 +27,15 @@ export class CreateUserUseCase {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const user = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.user.create({
-        data: {
-          email: dto.email,
-          password: hashedPassword,
-          roleId,
-          emailVerifiedAt: new Date(),
-        },
-      });
-
-      await tx.profile.create({
-        data: {
-          userId: created.id,
-          fullName: dto.fullName,
-          phone: dto.phone,
-          address: dto.address,
-        },
-      });
-
-      return tx.user.findUniqueOrThrow({
-        where: { id: created.id },
-        include: USER_INCLUDE,
-      });
+    const user = await this.userRepository.createWithProfile({
+      email: dto.email,
+      password: hashedPassword,
+      roleId,
+      profile: {
+        fullName: dto.fullName,
+        phone: dto.phone,
+        address: dto.address,
+      },
     });
 
     return UserMapper.toResponseDto(user);

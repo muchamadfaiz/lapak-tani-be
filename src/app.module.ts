@@ -12,12 +12,11 @@ import {
 } from './config';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma';
-import { EmailModule } from './modules/email/email.module';
-import { AuthModule } from './modules/auth/auth.module';
+import { EmailModule } from './modules/email';
+import { AuthModule, JwtAuthGuard } from './modules/auth';
 import { UserModule } from './modules/user/user.module';
-import { UploadModule } from './modules/upload/upload.module';
+import { FileModule } from './modules/file';
 
-import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './common';
 
 @Module({
@@ -61,7 +60,7 @@ import { RolesGuard } from './common';
     EmailModule,
     AuthModule,
     UserModule,
-    UploadModule,
+    FileModule,
   ],
   providers: [
     // ThrottlerGuard didaftarkan pertama agar rate-limit jalan sebelum auth

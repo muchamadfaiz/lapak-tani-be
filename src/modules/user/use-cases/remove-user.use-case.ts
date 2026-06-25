@@ -1,25 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { UserRepository } from '../repository/user.repository';
 
 @Injectable()
 export class RemoveUserUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async execute(id: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.userRepository.findById(id);
     if (!user || user.deletedAt) {
       throw new NotFoundException('User not found');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.refreshToken.updateMany({
-        where: { userId: id, revokedAt: null },
-        data: { revokedAt: new Date() },
-      }),
-      this.prisma.user.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      }),
-    ]);
+    await this.userRepository.softDelete(id);
   }
 }

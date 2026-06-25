@@ -5,8 +5,13 @@ import { randomUUID } from 'crypto';
 import { diskStorage } from 'multer';
 import * as fs from 'fs';
 import * as path from 'path';
-import { UploadController } from './upload.controller';
+import { FileController } from './file.controller';
 import { UploadFileUseCase, DeleteFileUseCase } from './use-cases';
+import { FileRepository } from './repository/file.repository';
+import { StorageContract } from './storage/storage.contract';
+import { LocalDiskStorage } from './storage/local-disk.storage';
+import { FileContract } from './file.contract';
+import { FileService } from './file.service';
 
 const ALLOWED_MIMETYPES = [
   'image/jpeg',
@@ -57,7 +62,15 @@ const ALLOWED_MIMETYPES = [
       },
     }),
   ],
-  controllers: [UploadController],
-  providers: [UploadFileUseCase, DeleteFileUseCase],
+  controllers: [FileController],
+  providers: [
+    FileRepository,
+    { provide: StorageContract, useClass: LocalDiskStorage },
+    { provide: FileContract, useClass: FileService },
+    UploadFileUseCase,
+    DeleteFileUseCase,
+  ],
+  // Hanya kontrak publik yang diekspos ke modul lain.
+  exports: [FileContract],
 })
-export class UploadModule {}
+export class FileModule {}

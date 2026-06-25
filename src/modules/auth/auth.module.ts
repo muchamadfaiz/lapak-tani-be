@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { UserModule } from '../user/user.module';
+import { UserModule } from '../user';
 import { AuthController } from './auth.controller';
 import { TokenService } from './services/token.service';
+import { AuthRepository } from './repository/auth.repository';
+import { AuthContract } from './auth.contract';
+import { AuthService } from './auth.service';
 import {
   RegisterUseCase,
   LoginUseCase,
@@ -23,6 +26,8 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
   imports: [PassportModule, JwtModule.register({}), UserModule],
   controllers: [AuthController],
   providers: [
+    AuthRepository,
+    { provide: AuthContract, useClass: AuthService },
     TokenService,
     RegisterUseCase,
     LoginUseCase,
@@ -37,6 +42,6 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
     JwtStrategy,
     JwtRefreshStrategy,
   ],
-  exports: [TokenService],
+  exports: [AuthContract],
 })
 export class AuthModule {}

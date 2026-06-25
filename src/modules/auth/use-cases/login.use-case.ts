@@ -1,30 +1,27 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { AuthRepository } from '../repository/auth.repository';
 import { AuthResponseDto, LoginDto } from '../dto';
 import { AuthMapper } from '../mapper/auth.mapper';
 import { TokenService } from '../services/token.service';
-
-const USER_INCLUDE = { role: true, profile: true } as const;
+import { UserContract } from '../../user/user.contract';
 
 @Injectable()
 export class LoginUseCase {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly authRepository: AuthRepository,
     private readonly tokenService: TokenService,
+    private readonly userContract: UserContract,
   ) {}
 
   async execute(dto: LoginDto): Promise<AuthResponseDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      include: USER_INCLUDE,
-    });
+    const user = await this.userContract.findByEmailForAuth(dto.email);
 
     if (!user || !user.isActive || user.deletedAt) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');

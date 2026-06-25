@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UploadResponseDto {
+/** Response HTTP untuk endpoint file (POST /files). */
+export class FileResponseDto {
   @ApiProperty({ description: 'File UUID' })
   id: string;
 

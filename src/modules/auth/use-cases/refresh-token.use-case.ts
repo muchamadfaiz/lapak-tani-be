@@ -1,16 +1,16 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { AuthRepository } from '../repository/auth.repository';
 import { AuthResponseDto } from '../dto';
 import { AuthMapper } from '../mapper/auth.mapper';
 import { TokenService } from '../services/token.service';
-
-const USER_INCLUDE = { role: true, profile: true } as const;
+import { UserContract } from '../../user/user.contract';
 
 @Injectable()
 export class RefreshTokenUseCase {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly authRepository: AuthRepository,
     private readonly tokenService: TokenService,
+    private readonly userContract: UserContract,
   ) {}
 
   async execute(input: {
@@ -21,9 +21,7 @@ export class RefreshTokenUseCase {
 
     const hashedToken = this.tokenService.hashToken(currentRefreshToken);
 
-    const tokenRecord = await this.prisma.refreshToken.findUnique({
-      where: { token: hashedToken },
-    });
+    const tokenRecord = await this.authRepository.findRefreshToken(hashedToken);
 
     if (
       !tokenRecord ||
@@ -34,15 +32,9 @@ export class RefreshTokenUseCase {
       throw new ForbiddenException('Access denied');
     }
 
-    await this.prisma.refreshToken.update({
-      where: { id: tokenRecord.id },
-      data: { revokedAt: new Date() },
-    });
+    await this.authRepository.revokeRefreshToken(tokenRecord.id);
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: USER_INCLUDE,
-    });
+    const user = await this.userContract.findByIdForAuth(userId);
 
     if (!user || !user.isActive || user.deletedAt) {
       throw new ForbiddenException('Access denied');

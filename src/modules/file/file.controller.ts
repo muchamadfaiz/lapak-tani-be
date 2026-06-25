@@ -24,9 +24,9 @@ import { CurrentUser, ResponseMessage, Roles } from '../../common';
 import { UploadFileUseCase, DeleteFileUseCase } from './use-cases';
 
 @ApiBearerAuth()
-@ApiTags('Upload')
-@Controller('upload')
-export class UploadController {
+@ApiTags('Files')
+@Controller('files')
+export class FileController {
   constructor(
     private readonly uploadFileUseCase: UploadFileUseCase,
     private readonly deleteFileUseCase: DeleteFileUseCase,

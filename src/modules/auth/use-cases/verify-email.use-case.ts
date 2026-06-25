@@ -1,33 +1,29 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { AuthRepository } from '../repository/auth.repository';
 import { VerifyEmailDto } from '../dto';
+import { UserContract } from '../../user/user.contract';
 
 @Injectable()
 export class VerifyEmailUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly userContract: UserContract,
+  ) {}
 
   async execute(dto: VerifyEmailDto): Promise<void> {
     const hashedToken = createHash('sha256').update(dto.token).digest('hex');
 
-    const tokenRecord = await this.prisma.emailVerificationToken.findUnique({
-      where: { token: hashedToken },
-      include: { user: true },
-    });
+    const tokenRecord = await this.authRepository.findEmailVerificationToken(hashedToken);
 
     if (!tokenRecord || tokenRecord.usedAt || tokenRecord.expiresAt < new Date()) {
       throw new BadRequestException('Invalid or expired verification token');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: tokenRecord.userId },
-        data: { emailVerifiedAt: new Date() },
-      }),
-      this.prisma.emailVerificationToken.update({
-        where: { id: tokenRecord.id },
-        data: { usedAt: new Date() },
-      }),
-    ]);
+    // Mark email as verified in User module
+    await this.userContract.markEmailVerified(tokenRecord.userId);
+
+    // Mark email verification token as used in Auth module
+    await this.authRepository.markEmailVerificationTokenUsed(tokenRecord.id);
   }
 }
