@@ -8,6 +8,8 @@ export class ProductMapper {
       name: product.name,
       description: product.description,
       price: product.price,
+      costPrice: product.costPrice,
+      unit: product.unit,
       imageUrl: product.imageUrl,
       categoryId: product.categoryId,
       outletId: product.outletId,

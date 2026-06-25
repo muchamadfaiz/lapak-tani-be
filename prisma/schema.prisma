@@ -40,7 +40,9 @@ model Product {
   id          String   @id @default(uuid())
   name        String
   description String?  @db.Text
-  price       Int // Rupiah (tanpa desimal)
+  price       Int // Rupiah (tanpa desimal) — harga jual
+  costPrice   Int? // Rupiah — harga modal (opsional, internal)
+  unit        String? // satuan: kg, gram, pcs, ikat, dll
   imageUrl    String?
 
   // Soft reference (TANPA FK lintas-modul) — divalidasi via CategoryContract/OutletContract.

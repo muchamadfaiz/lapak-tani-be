@@ -22,6 +22,8 @@ export class CreateProductUseCase {
       name: dto.name,
       description: dto.description,
       price: dto.price,
+      costPrice: dto.costPrice,
+      unit: dto.unit,
       imageUrl: dto.imageUrl,
       categoryId: dto.categoryId,
       outletId: dto.outletId,

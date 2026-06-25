@@ -20,10 +20,21 @@ export class CreateProductDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: 78000, description: 'Harga (Rupiah, tanpa desimal)' })
+  @ApiProperty({ example: 78000, description: 'Harga jual (Rupiah, tanpa desimal)' })
   @IsInt()
   @Min(0)
   price: number;
+
+  @ApiPropertyOptional({ example: 65000, description: 'Harga modal (Rupiah)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  costPrice?: number;
+
+  @ApiPropertyOptional({ example: 'kg', description: 'Satuan (kg, gram, pcs, ikat, dll)' })
+  @IsOptional()
+  @IsString()
+  unit?: string;
 
   @ApiPropertyOptional({ description: 'URL gambar produk' })
   @IsOptional()

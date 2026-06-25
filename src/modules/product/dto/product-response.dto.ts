@@ -13,6 +13,12 @@ export class ProductResponseDto {
   @ApiProperty({ example: 78000 })
   price: number;
 
+  @ApiProperty({ nullable: true, example: 65000, description: 'Harga modal (internal)' })
+  costPrice: number | null;
+
+  @ApiProperty({ nullable: true, example: 'kg' })
+  unit: string | null;
+
   @ApiProperty({ nullable: true })
   imageUrl: string | null;
 

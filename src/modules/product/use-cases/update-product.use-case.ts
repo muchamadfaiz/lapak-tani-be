@@ -30,6 +30,8 @@ export class UpdateProductUseCase {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.description !== undefined && { description: dto.description }),
       ...(dto.price !== undefined && { price: dto.price }),
+      ...(dto.costPrice !== undefined && { costPrice: dto.costPrice }),
+      ...(dto.unit !== undefined && { unit: dto.unit }),
       ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
       ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
       ...(dto.outletId !== undefined && { outletId: dto.outletId }),
