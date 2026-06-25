@@ -53,6 +53,17 @@ export class ProductController {
     return this.findAllProductsUseCase.execute(query);
   }
 
+  @ApiBearerAuth()
+  @Roles('ADMIN')
+  @Get(':id/manage')
+  @ApiOperation({ summary: 'Detail produk untuk admin (termasuk harga modal)' })
+  @ApiParam({ name: 'id', description: 'Product UUID' })
+  @ApiResponse({ status: 200, description: 'Produk ditemukan (dengan costPrice)' })
+  @ResponseMessage('Success get product')
+  findByIdAdmin(@Param('id') id: string) {
+    return this.findProductByIdUseCase.execute(id, true);
+  }
+
   @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Detail produk (publik)' })

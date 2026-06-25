@@ -64,6 +64,10 @@ export class UserService extends UserContract {
     await this.userRepository.markEmailVerified(userId);
   }
 
+  getAdminIds(): Promise<string[]> {
+    return this.userRepository.findIdsByRole('ADMIN');
+  }
+
   private mapToUserForAuth(user: any): UserForAuth {
     return {
       id: user.id,

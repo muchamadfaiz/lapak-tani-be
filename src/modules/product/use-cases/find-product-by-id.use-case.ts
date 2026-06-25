@@ -7,11 +7,13 @@ import { ProductMapper } from '../mapper/product.mapper';
 export class FindProductByIdUseCase {
   constructor(private readonly productRepository: ProductRepository) {}
 
-  async execute(id: string): Promise<ProductResponseDto> {
+  async execute(id: string, asAdmin = false): Promise<ProductResponseDto> {
     const product = await this.productRepository.findById(id);
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-    return ProductMapper.toResponseDto(product);
+    return asAdmin
+      ? ProductMapper.toAdminResponseDto(product)
+      : ProductMapper.toResponseDto(product);
   }
 }

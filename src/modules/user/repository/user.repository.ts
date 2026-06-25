@@ -36,6 +36,14 @@ export class UserRepository {
     return this.prisma.role.findUnique({ where: { name } });
   }
 
+  async findIdsByRole(roleName: string): Promise<string[]> {
+    const users = await this.prisma.user.findMany({
+      where: { deletedAt: null, role: { name: roleName } },
+      select: { id: true },
+    });
+    return users.map((u) => u.id);
+  }
+
   findManyWithRelations(args: {
     where: Prisma.UserWhereInput;
     skip?: number;

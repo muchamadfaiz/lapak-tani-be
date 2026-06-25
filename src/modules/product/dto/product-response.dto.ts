@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ProductResponseDto {
   @ApiProperty()
@@ -13,8 +13,8 @@ export class ProductResponseDto {
   @ApiProperty({ example: 78000 })
   price: number;
 
-  @ApiProperty({ nullable: true, example: 65000, description: 'Harga modal (internal)' })
-  costPrice: number | null;
+  @ApiPropertyOptional({ nullable: true, example: 65000, description: 'Harga modal (internal, hanya untuk admin)' })
+  costPrice?: number | null;
 
   @ApiProperty({ nullable: true, example: 'kg' })
   unit: string | null;

@@ -42,4 +42,7 @@ export abstract class UserContract {
 
   /** Menandai email user telah terverifikasi. */
   abstract markEmailVerified(userId: string): Promise<void>;
+
+  /** Ambil ID semua user ber-role ADMIN (untuk notifikasi). */
+  abstract getAdminIds(): Promise<string[]>;
 }

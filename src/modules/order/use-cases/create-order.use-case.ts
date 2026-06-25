@@ -6,6 +6,7 @@ import {
 import { haversineKm } from '../../../common';
 import { OutletContract } from '../../outlet';
 import { ProductContract, ProductRef } from '../../product';
+import { NotificationContract } from '../../notification';
 import { OrderRepository } from '../repository/order.repository';
 import { CustomerRepository } from '../repository/customer.repository';
 import { CreateOrderDto, OrderResponseDto } from '../dto';
@@ -26,6 +27,7 @@ export class CreateOrderUseCase {
     private readonly customerRepository: CustomerRepository,
     private readonly outletContract: OutletContract,
     private readonly productContract: ProductContract,
+    private readonly notificationContract: NotificationContract,
   ) {}
 
   async execute(dto: CreateOrderDto): Promise<OrderResponseDto> {
@@ -117,6 +119,18 @@ export class CreateOrderUseCase {
       distanceKm,
       items,
     });
+
+    // Beri tahu admin (best-effort, jangan gagalkan order bila notif error).
+    try {
+      await this.notificationContract.notifyAdmins({
+        title: 'Pesanan baru',
+        message: `${order.orderNumber} — ${customer.name || customer.phone} • Rp${total.toLocaleString('id-ID')}`,
+        type: 'order',
+        data: { orderId: order.id, orderNumber: order.orderNumber },
+      });
+    } catch {
+      // abaikan
+    }
 
     // 7. Link WA untuk konfirmasi pembayaran manual
     const whatsappUrl = buildWhatsappUrl(ADMIN_WA, {

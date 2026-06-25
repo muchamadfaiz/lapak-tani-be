@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { OutletModule } from '../outlet';
 import { ProductModule } from '../product';
+import { NotificationModule } from '../notification';
 import { OrderController } from './order.controller';
 import { OrderRepository } from './repository/order.repository';
 import { CustomerRepository } from './repository/customer.repository';
@@ -12,8 +13,9 @@ import {
 } from './use-cases';
 
 @Module({
-  // Pakai OutletContract & ProductContract untuk validasi + data snapshot.
-  imports: [OutletModule, ProductModule],
+  // Pakai OutletContract & ProductContract untuk validasi + data snapshot,
+  // NotificationContract untuk memberi tahu admin saat ada pesanan baru.
+  imports: [OutletModule, ProductModule, NotificationModule],
   controllers: [OrderController],
   providers: [
     OrderRepository,

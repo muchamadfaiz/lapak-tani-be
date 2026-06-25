@@ -109,6 +109,20 @@ model Order {
   @@map("orders")
 }
 
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String // soft reference ke user (penerima)
+  title     String
+  message   String   @db.Text
+  type      String? // order, info, dll
+  data      Json? // payload tambahan, mis. { orderId }
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("notifications")
+}
+
 model OrderItem {
   id          String @id @default(uuid())
 
