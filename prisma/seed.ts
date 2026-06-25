@@ -119,11 +119,9 @@ async function main() {
     { id: 'c1000000-0000-4000-8000-000000000005', name: 'Pupuk & Sarana Tani', icon: '🧪', sortOrder: 5 },
   ];
   for (const c of CATEGORIES) {
-    await prisma.category.upsert({
-      where: { id: c.id },
-      update: { name: c.name, icon: c.icon, sortOrder: c.sortOrder },
-      create: c,
-    });
+    // update:{} = insert-only. Seed jalan tiap container start (Dockerfile CMD),
+    // jadi JANGAN timpa data yang sudah ada (editan admin) — hanya buat yang belum ada.
+    await prisma.category.upsert({ where: { id: c.id }, update: {}, create: c });
   }
   const [CAT_SAYUR, CAT_BUAH, CAT_BERAS, CAT_REMPAH, CAT_PUPUK] = CATEGORIES.map((c) => c.id);
   console.log(`Seeded ${CATEGORIES.length} categories`);
@@ -136,7 +134,7 @@ async function main() {
     { id: 'a2000000-0000-4000-8000-000000000004', name: 'LapakTani Sako', address: 'Jl. Sako Raya No. 18, Sako, Palembang', latitude: -2.958, longitude: 104.785, phone: '0711-111004' },
   ];
   for (const o of OUTLETS) {
-    await prisma.outlet.upsert({ where: { id: o.id }, update: o, create: o });
+    await prisma.outlet.upsert({ where: { id: o.id }, update: {}, create: o });
   }
   const [OUT_ILIR, OUT_BUKIT, OUT_JAKA, OUT_SAKO] = OUTLETS.map((o) => o.id);
   console.log(`Seeded ${OUTLETS.length} outlets`);
@@ -165,7 +163,7 @@ async function main() {
     { id: 'b3000000-0000-4000-8000-000000000016', name: 'Pupuk Kompos Organik 5kg', description: 'Kompos organik untuk menyuburkan tanah', price: 25000, categoryId: CAT_PUPUK, outletId: OUT_SAKO, stock: 50 },
   ];
   for (const p of PRODUCTS) {
-    await prisma.product.upsert({ where: { id: p.id }, update: p, create: p });
+    await prisma.product.upsert({ where: { id: p.id }, update: {}, create: p });
   }
   console.log(`Seeded ${PRODUCTS.length} products`);
 }
