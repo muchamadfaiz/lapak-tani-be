@@ -36,6 +36,28 @@ model Outlet {
   @@map("outlets")
 }
 
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?  @db.Text
+  price       Int // Rupiah (tanpa desimal)
+  imageUrl    String?
+
+  // Soft reference (TANPA FK lintas-modul) — divalidasi via CategoryContract/OutletContract.
+  categoryId  String
+  outletId    String
+
+  stock       Int      @default(0)
+  isAvailable Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([outletId])
+  @@index([categoryId])
+  @@map("products")
+}
+
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
