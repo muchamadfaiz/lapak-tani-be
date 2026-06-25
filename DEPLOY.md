@@ -18,8 +18,8 @@ Reverse proxy: **Caddy** (`/etc/caddy/Caddyfile`, auto-HTTPS).
 > (Caddy butuh DNS untuk ambil sertifikat Let's Encrypt — dia auto-retry).
 
 ## `<sub>` = nama subdomain (sebelum `.palembang-go.id`)
-- `api-ipal.palembang-go.id` → `./add-site.sh api-ipal 3010`
-- `monev2.palembang-go.id`   → `./add-site.sh monev2 3011`
+- `api-lapaktani.palembang-go.id` → `./add-site.sh api-lapaktani 3010`
+- `monev2.palembang-go.id`        → `./add-site.sh monev2 3011`
 
 Script (`add-site.sh`) menambah blok Caddy + validate + reload. Jalankan **di server**,
 sekali `chmod +x add-site.sh`. DNS A record pakai host = `<sub>`.
@@ -30,7 +30,7 @@ sekali `chmod +x add-site.sh`. DNS A record pakai host = `<sub>`.
 | 3000 | api-monev |
 | 3001 | marlina-api |
 | 3009 | api.sidrainase |
-| 3010 | SIPAL (IPAL) BE |
+| 3010 | Lapak Tani BE |
 | 19999 | (opsional) Netdata monitoring |
 
 Cek cepat: `sudo ss -ltnp | grep -E '300|301'`

@@ -26,12 +26,8 @@ const PEAK_VUS = Number(__ENV.PEAK_VUS || 50);
 
 // Endpoint GET (read-only) yang diuji. Tambah/kurangi sesuai kebutuhan.
 const ENDPOINTS = [
-  { name: 'GET /ipals', path: '/ipals' },
-  { name: 'GET /ipals/map', path: '/ipals/map' },
-  { name: 'GET /surveys', path: '/surveys' },
-  { name: 'GET /surveys/map', path: '/surveys/map' },
   { name: 'GET /users', path: '/users' },
-  { name: 'GET /rbac/roles', path: '/rbac/roles' },
+  { name: 'GET /auth/me', path: '/auth/me' },
 ];
 
 // Threshold per endpoint (latency hanya dari response sukses, 429 tidak dihitung)

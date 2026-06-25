@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'attendance-api',
+      name: 'lapak-tani-api',
       script: 'dist/src/main.js',
       instances: 1,
       exec_mode: 'fork',

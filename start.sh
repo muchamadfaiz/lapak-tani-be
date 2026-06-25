@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================
-#  Boilerplate NestJS - Manual Start (No Docker)
+#  Lapak Tani BE - Manual Start (No Docker)
 # =============================================
 
 set -e

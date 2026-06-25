@@ -1,6 +1,6 @@
-# Boilerplate NestJS
+# Lapak Tani — Backend
 
-NestJS + Prisma + PostgreSQL boilerplate project.
+Backend Lapak Tani (marketplace produk pertanian). NestJS + Prisma + PostgreSQL, arsitektur modular monolith.
 
 ## Tech Stack
 
@@ -121,7 +121,7 @@ Lihat `.env.example` untuk daftar lengkap environment variables yang dibutuhkan.
 | --------------------- | --------------------------- | ----------------------------- |
 | `NODE_ENV`            | Environment                 | `development`                 |
 | `APP_PORT`            | Port aplikasi               | `3000`                        |
-| `DATABASE_URL`        | PostgreSQL connection string| `postgresql://postgres:postgres@localhost:5432/nestjs_boilerplate` |
+| `DATABASE_URL`        | PostgreSQL connection string| `postgresql://postgres:postgres@localhost:5432/lapak_tani` |
 | `JWT_ACCESS_SECRET`   | JWT access token secret     | -                             |
 | `JWT_REFRESH_SECRET`  | JWT refresh token secret    | -                             |
 | `SWAGGER_ENABLED`     | Aktifkan Swagger docs       | `true`                        |

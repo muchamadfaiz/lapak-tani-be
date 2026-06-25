@@ -10,18 +10,18 @@
 ## 1. Clone Repository
 
 ```bash
-git clone <repo-url> /var/www/attendance-api
-cd /var/www/attendance-api
+git clone <repo-url> /var/www/lapak-tani-be
+cd /var/www/lapak-tani-be
 ```
 
 ## 2. Jalankan PostgreSQL via Docker
 
 ```bash
 docker run -d \
-  --name postgres-attendance \
+  --name postgres-lapak-tani \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=gantiPasswordIni \
-  -e POSTGRES_DB=attendance_db \
+  -e POSTGRES_DB=lapak_tani \
   -p 5432:5432 \
   -v pgdata:/var/lib/postgresql/data \
   --restart unless-stopped \
@@ -43,7 +43,7 @@ APP_PORT=3000
 APP_CORS_ORIGINS=https://domain-frontend.com
 SWAGGER_ENABLED=true
 
-DATABASE_URL=postgresql://postgres:gantiPasswordIni@localhost:5432/attendance_db?schema=public
+DATABASE_URL=postgresql://postgres:gantiPasswordIni@localhost:5432/lapak_tani?schema=public
 
 JWT_ACCESS_SECRET=<generate: openssl rand -hex 32>
 JWT_ACCESS_EXPIRATION=15m
@@ -79,7 +79,7 @@ Cek status:
 
 ```bash
 pm2 status
-pm2 logs attendance-api
+pm2 logs lapak-tani-api
 ```
 
 ## 6. (Optional) Nginx Reverse Proxy
@@ -100,7 +100,7 @@ server {
     }
 
     location /uploads/ {
-        alias /var/www/attendance-api/uploads/;
+        alias /var/www/lapak-tani-be/uploads/;
     }
 }
 ```
@@ -108,7 +108,7 @@ server {
 Lalu aktifkan:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/attendance-api /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/lapak-tani-api /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -116,13 +116,13 @@ sudo systemctl reload nginx
 ## Update Deployment
 
 ```bash
-cd /var/www/attendance-api
+cd /var/www/lapak-tani-be
 git pull
 pnpm install --frozen-lockfile
 npx prisma generate
 npx prisma migrate deploy
 pnpm build
-pm2 restart attendance-api
+pm2 restart lapak-tani-api
 ```
 
 ## Useful Commands
@@ -130,10 +130,10 @@ pm2 restart attendance-api
 | Command | Deskripsi |
 |---------|-----------|
 | `pm2 status` | Cek status app |
-| `pm2 logs attendance-api` | Lihat logs |
-| `pm2 restart attendance-api` | Restart app |
-| `pm2 stop attendance-api` | Stop app |
-| `pm2 delete attendance-api` | Hapus dari PM2 |
+| `pm2 logs lapak-tani-api` | Lihat logs |
+| `pm2 restart lapak-tani-api` | Restart app |
+| `pm2 stop lapak-tani-api` | Stop app |
+| `pm2 delete lapak-tani-api` | Hapus dari PM2 |
 | `npx prisma studio` | Buka DB GUI (dev only) |
 
 ## Default Admin Login

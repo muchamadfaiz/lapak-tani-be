@@ -1,6 +1,6 @@
 #!/bin/bash
 # Tambah subdomain ke Caddy: ./add-site.sh <subdomain> <port>
-# Contoh: ./add-site.sh api-ipal 3010  -> api-ipal.palembang-go.id -> localhost:3010
+# Contoh: ./add-site.sh api-lapaktani 3010  -> api-lapaktani.palembang-go.id -> localhost:3010
 # CATATAN: tambah A record di DNS dulu, kalau tidak Caddy gagal ambil HTTPS.
 set -e
 CADDYFILE=/etc/caddy/Caddyfile

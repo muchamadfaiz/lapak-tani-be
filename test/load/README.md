@@ -44,9 +44,8 @@ Daftar endpoint yang diuji ada di array `ENDPOINTS` dalam `api-load.js` — ting
 
 Ringkasan k6 menampilkan **satu baris per endpoint**, langsung ✓/✗:
 ```
-✓ http_req_duration{name:GET /ipals/map,expected_response:true} p(95)=47ms
-✓ http_req_duration{name:GET /surveys,expected_response:true}   p(95)=52ms
-✗ http_req_duration{name:GET /users,expected_response:true}     p(95)=820ms   <- perlu perhatian
+✓ http_req_duration{name:GET /users,expected_response:true}   p(95)=52ms
+✗ http_req_duration{name:GET /auth/me,expected_response:true} p(95)=820ms   <- perlu perhatian
 ```
 
 - **p95 / p99 per endpoint** → patokan: p95 < 500ms, p99 < 1000ms (kondisi pengalaman terburuk, bukan rata-rata).
