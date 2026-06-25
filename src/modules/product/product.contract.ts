@@ -22,4 +22,20 @@ export abstract class ProductContract {
 
   /** Ambil banyak produk sekaligus (hindari N+1 saat Order memproses item). */
   abstract findByIds(ids: string[]): Promise<ProductRef[]>;
+
+  /**
+   * Kurangi stok beberapa produk secara atomik (dipakai saat order dibuat).
+   * Melempar error bila ada stok yang tidak mencukupi (semua di-rollback).
+   */
+  abstract decrementStock(
+    items: { productId: string; quantity: number }[],
+  ): Promise<void>;
+
+  /**
+   * Kembalikan stok beberapa produk (dipakai saat order dibatalkan).
+   * Aman bila produk sudah dihapus (di-skip).
+   */
+  abstract restoreStock(
+    items: { productId: string; quantity: number }[],
+  ): Promise<void>;
 }

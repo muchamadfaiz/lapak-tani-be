@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Product } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 
@@ -51,5 +51,40 @@ export class ProductRepository {
 
   delete(id: string): Promise<Product> {
     return this.prisma.product.delete({ where: { id } });
+  }
+
+  /**
+   * Kurangi stok beberapa produk dalam satu transaksi. updateMany dengan
+   * guard `stock >= quantity` memastikan tak ada stok minus (anti oversell);
+   * bila ada yang gagal (count 0), seluruh transaksi di-rollback.
+   */
+  async decrementStock(
+    items: { productId: string; quantity: number }[],
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      for (const it of items) {
+        const res = await tx.product.updateMany({
+          where: { id: it.productId, stock: { gte: it.quantity } },
+          data: { stock: { decrement: it.quantity } },
+        });
+        if (res.count === 0) {
+          throw new BadRequestException('Stok produk tidak mencukupi');
+        }
+      }
+    });
+  }
+
+  /** Kembalikan stok (increment). updateMany → tak error walau produk sudah dihapus. */
+  async restoreStock(
+    items: { productId: string; quantity: number }[],
+  ): Promise<void> {
+    await this.prisma.$transaction(
+      items.map((it) =>
+        this.prisma.product.updateMany({
+          where: { id: it.productId },
+          data: { stock: { increment: it.quantity } },
+        }),
+      ),
+    );
   }
 }

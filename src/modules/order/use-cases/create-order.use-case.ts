@@ -96,7 +96,12 @@ export class CreateOrderUseCase {
       dto.customerName,
     );
 
-    // 6. Simpan order + item
+    // 6. Kurangi stok secara atomik (anti oversell). Bila gagal, order tak dibuat.
+    await this.productContract.decrementStock(
+      items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+    );
+
+    // 7. Simpan order + item
     const order = await this.orderRepository.createWithItems({
       orderNumber: generateOrderNumber(),
       customerId: customer.id,

@@ -23,6 +23,14 @@ export class ProductService extends ProductContract {
     return products.map((p) => ProductService.toRef(p));
   }
 
+  decrementStock(items: { productId: string; quantity: number }[]): Promise<void> {
+    return this.productRepository.decrementStock(items);
+  }
+
+  restoreStock(items: { productId: string; quantity: number }[]): Promise<void> {
+    return this.productRepository.restoreStock(items);
+  }
+
   private static toRef(product: Product): ProductRef {
     return {
       id: product.id,
