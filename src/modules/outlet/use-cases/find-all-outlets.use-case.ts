@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { OutletRepository } from '../repository/outlet.repository';
 import { FindOutletsQueryDto, OutletResponseDto } from '../dto';
 import { OutletMapper } from '../mapper/outlet.mapper';
-import { haversineKm } from '../geo.util';
+import { haversineKm } from '../../../common';
 
 @Injectable()
 export class FindAllOutletsUseCase {

@@ -58,6 +58,71 @@ model Product {
   @@map("products")
 }
 
+model Customer {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  name      String?
+
+  orders    Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Order {
+  id          String @id @default(uuid())
+  orderNumber String @unique
+
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+
+  // Soft reference lintas-modul (TANPA FK) — divalidasi via OutletContract.
+  outletId    String
+
+  status      String @default("pending") // pending, confirmed, processing, shipped, completed, cancelled
+
+  subtotal      Int
+  shippingCost  Int
+  total         Int
+
+  paymentMethod   String // transfer_bca, cod, qris, dll (manual)
+  shippingAddress String  @db.Text
+  notes           String? @db.Text
+
+  // Koordinat tujuan (opsional) untuk kalkulasi ongkir
+  latitude    Float?
+  longitude   Float?
+  distanceKm  Float?
+
+  items       OrderItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([outletId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String @id @default(uuid())
+
+  orderId     String
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Soft reference ke Product (TANPA FK) + snapshot data saat order dibuat.
+  productId   String
+  productName String
+  price       Int
+  quantity    Int
+  subtotal    Int
+
+  @@map("order_items")
+}
+
 model User {
   id                String    @id @default(uuid())
   email             String    @unique

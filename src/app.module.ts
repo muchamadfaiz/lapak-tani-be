@@ -19,6 +19,7 @@ import { FileModule } from './modules/file';
 import { CategoryModule } from './modules/category';
 import { OutletModule } from './modules/outlet';
 import { ProductModule } from './modules/product';
+import { OrderModule } from './modules/order';
 
 import { RolesGuard } from './common';
 
@@ -67,6 +68,7 @@ import { RolesGuard } from './common';
     CategoryModule,
     OutletModule,
     ProductModule,
+    OrderModule,
   ],
   providers: [
     // ThrottlerGuard didaftarkan pertama agar rate-limit jalan sebelum auth

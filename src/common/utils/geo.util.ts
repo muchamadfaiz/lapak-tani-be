@@ -1,6 +1,6 @@
 /**
  * Hitung jarak dua titik koordinat (km) dengan formula Haversine.
- * Dipakai untuk fitur "outlet terdekat" dan kalkulasi ongkir.
+ * Util murni lintas-modul (shared kernel) — dipakai Outlet (terdekat) & Order (ongkir).
  */
 export function haversineKm(
   lat1: number,
