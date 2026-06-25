@@ -16,6 +16,7 @@ import { EmailModule } from './modules/email';
 import { AuthModule, JwtAuthGuard } from './modules/auth';
 import { UserModule } from './modules/user/user.module';
 import { FileModule } from './modules/file';
+import { CategoryModule } from './modules/category';
 
 import { RolesGuard } from './common';
 
@@ -61,6 +62,7 @@ import { RolesGuard } from './common';
     AuthModule,
     UserModule,
     FileModule,
+    CategoryModule,
   ],
   providers: [
     // ThrottlerGuard didaftarkan pertama agar rate-limit jalan sebelum auth

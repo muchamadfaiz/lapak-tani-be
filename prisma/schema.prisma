@@ -6,6 +6,20 @@ datasource db {
   provider = "postgresql"
 }
 
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  icon      String?
+  imageUrl  String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
