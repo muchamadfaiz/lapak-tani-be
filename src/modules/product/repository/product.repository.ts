@@ -22,16 +22,20 @@ export class ProductRepository {
     return this.prisma.product.create({ data });
   }
 
+  // Hanya produk aktif (deletedAt: null) yang tampil di semua query.
   findById(id: string): Promise<Product | null> {
-    return this.prisma.product.findUnique({ where: { id } });
+    return this.prisma.product.findFirst({ where: { id, deletedAt: null } });
   }
 
   findByIds(ids: string[]): Promise<Product[]> {
-    return this.prisma.product.findMany({ where: { id: { in: ids } } });
+    return this.prisma.product.findMany({
+      where: { id: { in: ids }, deletedAt: null },
+    });
   }
 
   findAll(filter: ProductFilter): Promise<Product[]> {
     const where: Prisma.ProductWhereInput = {
+      deletedAt: null,
       ...(filter.outletId && { outletId: filter.outletId }),
       ...(filter.categoryId && { categoryId: filter.categoryId }),
       ...(filter.available !== undefined && { isAvailable: filter.available }),
@@ -49,8 +53,12 @@ export class ProductRepository {
     return this.prisma.product.update({ where: { id }, data });
   }
 
+  /** Soft delete: tandai terhapus & nonaktifkan agar tak bisa dipesan. */
   delete(id: string): Promise<Product> {
-    return this.prisma.product.delete({ where: { id } });
+    return this.prisma.product.update({
+      where: { id },
+      data: { deletedAt: new Date(), isAvailable: false },
+    });
   }
 
   /**

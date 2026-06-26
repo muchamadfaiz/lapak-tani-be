@@ -5,3 +5,4 @@ export {
   OrderResponseDto,
   OrderItemResponseDto,
 } from './order-response.dto';
+export { CustomerLookupDto, PointHistoryDto } from './customer-lookup.dto';

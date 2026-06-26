@@ -88,6 +88,14 @@ export class OrderRepository {
     });
   }
 
+  findByCustomerId(customerId: string): Promise<OrderWithRelations[]> {
+    return this.prisma.order.findMany({
+      where: { customerId },
+      include: ORDER_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   updateStatus(id: string, status: string): Promise<OrderWithRelations> {
     return this.prisma.order.update({
       where: { id },

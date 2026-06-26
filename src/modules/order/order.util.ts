@@ -21,6 +21,24 @@ export const ORDER_STATUSES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
+/** Poin loyalty: 1 poin per Rp1.000 belanja (dari total order). */
+export const POINT_PER_RUPIAH = 1000;
+export function calcEarnedPoints(total: number): number {
+  return Math.floor(total / POINT_PER_RUPIAH);
+}
+
+/**
+ * Normalisasi No HP ke format kanonik agar pelanggan konsisten dikenali
+ * (kunci unik Customer + akumulasi poin). Buang non-digit, samakan awalan:
+ * "0812.."→"62812..", "+62812.."→"62812..", "62812.."→tetap, "812.."→"62812..".
+ */
+export function normalizePhone(raw: string): string {
+  let d = (raw || '').replace(/\D/g, ''); // sisakan angka saja
+  if (d.startsWith('0')) d = '62' + d.slice(1);
+  else if (d.startsWith('8')) d = '62' + d; // tanpa awalan, asumsikan Indonesia
+  return d; // sudah '62...' → biarkan
+}
+
 /** Nomor order: ORD-YYYYMMDD-XXXX (XXXX acak). */
 export function generateOrderNumber(): string {
   const d = new Date();

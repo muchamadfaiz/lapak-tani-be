@@ -15,6 +15,7 @@ import {
   buildWhatsappUrl,
   calcShippingCost,
   generateOrderNumber,
+  normalizePhone,
   MIN_ONGKIR,
 } from '../order.util';
 
@@ -92,9 +93,9 @@ export class CreateOrderUseCase {
     }
     const total = subtotal + shippingCost;
 
-    // 5. Pelanggan otomatis terdata lewat No HP
+    // 5. Pelanggan otomatis terdata lewat No HP (dinormalisasi → kunci konsisten)
     const customer = await this.customerRepository.upsertByPhone(
-      dto.phone,
+      normalizePhone(dto.phone),
       dto.customerName,
     );
 

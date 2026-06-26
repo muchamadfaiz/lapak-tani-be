@@ -52,6 +52,9 @@ model Product {
   stock       Int      @default(0)
   isAvailable Boolean  @default(true)
 
+  // Soft delete: null = aktif. Produk terhapus disembunyikan dari query.
+  deletedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -62,15 +65,38 @@ model Product {
 
 model Customer {
   id        String   @id @default(uuid())
+  // Disimpan dalam format kanonik (lihat normalizePhone) agar konsisten.
   phone     String   @unique
   name      String?
 
-  orders    Order[]
+  // Loyalty: saldo poin berjalan (1 poin / Rp1.000, earn saat order completed).
+  points    Int      @default(0)
+
+  orders            Order[]
+  pointTransactions PointTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("customers")
+}
+
+// Buku besar poin (auditable, anti-drift). Dimiliki modul Order.
+model PointTransaction {
+  id           String   @id @default(uuid())
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id])
+
+  orderId      String? // order pemicu (untuk earn)
+  type         String // earn | redeem
+  amount       Int // poin bertambah (earn) — selalu positif untuk earn
+  balanceAfter Int
+  note         String?
+
+  createdAt    DateTime @default(now())
+
+  @@index([customerId])
+  @@map("point_transactions")
 }
 
 model Order {
