@@ -16,4 +16,9 @@ export class UpdateProfileDto {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @ApiPropertyOptional({ description: 'URL foto profil' })
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
 }

@@ -97,7 +97,12 @@ export class UserRepository {
   updateWithProfile(
     id: string,
     userData: Prisma.UserUpdateInput,
-    profile: { fullName?: string; phone?: string; address?: string } | null,
+    profile: {
+      fullName?: string;
+      phone?: string;
+      address?: string;
+      avatarUrl?: string;
+    } | null,
   ): Promise<UserWithRelations> {
     return this.prisma.$transaction(async (tx) => {
       if (Object.keys(userData).length > 0) {
@@ -113,12 +118,16 @@ export class UserRepository {
             }),
             ...(profile.phone !== undefined && { phone: profile.phone }),
             ...(profile.address !== undefined && { address: profile.address }),
+            ...(profile.avatarUrl !== undefined && {
+              avatarUrl: profile.avatarUrl,
+            }),
           },
           create: {
             userId: id,
             fullName: profile.fullName ?? '',
             phone: profile.phone,
             address: profile.address,
+            avatarUrl: profile.avatarUrl,
           },
         });
       }

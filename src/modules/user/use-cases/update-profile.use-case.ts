@@ -18,12 +18,13 @@ export class UpdateProfileUseCase {
       throw new NotFoundException('User not found');
     }
 
-    const { fullName, phone, address } = dto;
+    const { fullName, phone, address, avatarUrl } = dto;
 
     const updated = await this.userRepository.updateWithProfile(userId, {}, {
       fullName,
       phone,
       address,
+      avatarUrl,
     });
 
     return UserMapper.toResponseDto(updated);
