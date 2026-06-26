@@ -5,6 +5,8 @@ import { NotificationModule } from '../notification';
 import { OrderController } from './order.controller';
 import { OrderRepository } from './repository/order.repository';
 import { CustomerRepository } from './repository/customer.repository';
+import { OrderContract } from './order.contract';
+import { OrderService } from './order.service';
 import {
   CreateOrderUseCase,
   FindAllOrdersUseCase,
@@ -20,10 +22,13 @@ import {
   providers: [
     OrderRepository,
     CustomerRepository,
+    OrderService,
+    { provide: OrderContract, useExisting: OrderService },
     CreateOrderUseCase,
     FindAllOrdersUseCase,
     FindOrderByIdUseCase,
     UpdateOrderStatusUseCase,
   ],
+  exports: [OrderContract],
 })
 export class OrderModule {}

@@ -61,8 +61,10 @@ export class ProductRepository {
   async decrementStock(
     items: { productId: string; quantity: number }[],
   ): Promise<void> {
+    // Urutkan by productId agar lock order konsisten antar-transaksi (anti-deadlock).
+    const ordered = [...items].sort((a, b) => a.productId.localeCompare(b.productId));
     await this.prisma.$transaction(async (tx) => {
-      for (const it of items) {
+      for (const it of ordered) {
         const res = await tx.product.updateMany({
           where: { id: it.productId, stock: { gte: it.quantity } },
           data: { stock: { decrement: it.quantity } },
@@ -78,8 +80,9 @@ export class ProductRepository {
   async restoreStock(
     items: { productId: string; quantity: number }[],
   ): Promise<void> {
+    const ordered = [...items].sort((a, b) => a.productId.localeCompare(b.productId));
     await this.prisma.$transaction(
-      items.map((it) =>
+      ordered.map((it) =>
         this.prisma.product.updateMany({
           where: { id: it.productId },
           data: { stock: { increment: it.quantity } },

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ProductContract } from '../../product';
 import { OrderRepository } from '../repository/order.repository';
+import { OrderService } from '../order.service';
 import { UpdateOrderStatusDto, OrderResponseDto } from '../dto';
 import { OrderMapper } from '../mapper/order.mapper';
 
@@ -8,29 +8,18 @@ import { OrderMapper } from '../mapper/order.mapper';
 export class UpdateOrderStatusUseCase {
   constructor(
     private readonly orderRepository: OrderRepository,
-    private readonly productContract: ProductContract,
+    private readonly orderService: OrderService,
   ) {}
 
   async execute(
     id: string,
     dto: UpdateOrderStatusDto,
   ): Promise<OrderResponseDto> {
-    const existing = await this.orderRepository.findById(id);
-    if (!existing) {
+    await this.orderService.setStatusById(id, dto.status); // termasuk restock saat cancel
+    const order = await this.orderRepository.findById(id);
+    if (!order) {
       throw new NotFoundException('Order tidak ditemukan');
     }
-
-    // Saat order dibatalkan (dari status non-cancelled), kembalikan stok produk.
-    if (dto.status === 'cancelled' && existing.status !== 'cancelled') {
-      await this.productContract.restoreStock(
-        existing.items.map((i) => ({
-          productId: i.productId,
-          quantity: i.quantity,
-        })),
-      );
-    }
-
-    const order = await this.orderRepository.updateStatus(id, dto.status);
     return OrderMapper.toResponseDto(order);
   }
 }

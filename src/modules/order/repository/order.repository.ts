@@ -59,6 +59,13 @@ export class OrderRepository {
     });
   }
 
+  findByOrderNumber(orderNumber: string): Promise<OrderWithRelations | null> {
+    return this.prisma.order.findUnique({
+      where: { orderNumber },
+      include: ORDER_INCLUDE,
+    });
+  }
+
   findAll(filter: OrderFilter): Promise<OrderWithRelations[]> {
     const where: Prisma.OrderWhereInput = {
       ...(filter.status && { status: filter.status }),

@@ -8,6 +8,7 @@ import {
   jwtConfig,
   storageConfig,
   emailConfig,
+  paymentConfig,
   validate,
 } from './config';
 import { APP_GUARD } from '@nestjs/core';
@@ -21,6 +22,7 @@ import { OutletModule } from './modules/outlet';
 import { ProductModule } from './modules/product';
 import { OrderModule } from './modules/order';
 import { NotificationModule } from './modules/notification';
+import { PaymentModule } from './modules/payment';
 
 import { RolesGuard } from './common';
 
@@ -29,7 +31,7 @@ import { RolesGuard } from './common';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
-      load: [appConfig, databaseConfig, jwtConfig, storageConfig, emailConfig],
+      load: [appConfig, databaseConfig, jwtConfig, storageConfig, emailConfig, paymentConfig],
       validate,
     }),
     // Rate limiting global: default 120 request / menit per IP (anti spam & DoS).
@@ -71,6 +73,7 @@ import { RolesGuard } from './common';
     ProductModule,
     OrderModule,
     NotificationModule,
+    PaymentModule,
   ],
   providers: [
     // ThrottlerGuard didaftarkan pertama agar rate-limit jalan sebelum auth
