@@ -34,6 +34,9 @@ export class ProductResponseDto {
   @ApiProperty()
   isAvailable: boolean;
 
+  @ApiProperty({ description: 'Produk unggulan (Produk Pilihan)' })
+  isFeatured: boolean;
+
   @ApiProperty()
   createdAt: Date;
 

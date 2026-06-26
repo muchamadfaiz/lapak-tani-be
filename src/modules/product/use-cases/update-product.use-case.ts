@@ -37,6 +37,7 @@ export class UpdateProductUseCase {
       ...(dto.outletId !== undefined && { outletId: dto.outletId }),
       ...(dto.stock !== undefined && { stock: dto.stock }),
       ...(dto.isAvailable !== undefined && { isAvailable: dto.isAvailable }),
+      ...(dto.isFeatured !== undefined && { isFeatured: dto.isFeatured }),
     });
     return ProductMapper.toResponseDto(product);
   }

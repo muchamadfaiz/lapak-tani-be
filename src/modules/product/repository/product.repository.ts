@@ -7,6 +7,7 @@ export interface ProductFilter {
   categoryId?: string;
   search?: string;
   available?: boolean;
+  featured?: boolean;
 }
 
 /**
@@ -39,6 +40,7 @@ export class ProductRepository {
       ...(filter.outletId && { outletId: filter.outletId }),
       ...(filter.categoryId && { categoryId: filter.categoryId }),
       ...(filter.available !== undefined && { isAvailable: filter.available }),
+      ...(filter.featured !== undefined && { isFeatured: filter.featured }),
       ...(filter.search && {
         name: { contains: filter.search, mode: 'insensitive' },
       }),

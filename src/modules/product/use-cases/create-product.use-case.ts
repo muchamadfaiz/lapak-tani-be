@@ -29,6 +29,7 @@ export class CreateProductUseCase {
       outletId: dto.outletId,
       stock: dto.stock,
       isAvailable: dto.isAvailable,
+      isFeatured: dto.isFeatured,
     });
     return ProductMapper.toResponseDto(product);
   }

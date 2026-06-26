@@ -26,4 +26,13 @@ export class FindProductsQueryDto {
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   available?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Filter unggulan (true = hanya Produk Pilihan)',
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  featured?: boolean;
 }

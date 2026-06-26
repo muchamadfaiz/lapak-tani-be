@@ -15,6 +15,7 @@ export class ProductMapper {
       outletId: product.outletId,
       stock: product.stock,
       isAvailable: product.isAvailable,
+      isFeatured: product.isFeatured,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };

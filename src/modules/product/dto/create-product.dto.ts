@@ -59,4 +59,9 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isAvailable?: boolean;
+
+  @ApiPropertyOptional({ default: false, description: 'Jadikan Produk Pilihan' })
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
 }

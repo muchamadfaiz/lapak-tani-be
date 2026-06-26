@@ -13,6 +13,7 @@ export class FindAllProductsUseCase {
       categoryId: query.categoryId,
       search: query.search,
       available: query.available,
+      featured: query.featured,
     });
     return ProductMapper.toResponseDtoList(products);
   }
