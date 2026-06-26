@@ -103,7 +103,8 @@ export class CreateOrderUseCase {
       items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
     );
 
-    // 7. Simpan order + item
+    // 7. Simpan order + item (+ batas waktu bayar)
+    const expireHours = Number(process.env.ORDER_PENDING_EXPIRE_HOURS || 24);
     const order = await this.orderRepository.createWithItems({
       orderNumber: generateOrderNumber(),
       customerId: customer.id,
@@ -117,6 +118,7 @@ export class CreateOrderUseCase {
       latitude: dto.latitude,
       longitude: dto.longitude,
       distanceKm,
+      expiresAt: new Date(Date.now() + expireHours * 60 * 60 * 1000),
       items,
     });
 

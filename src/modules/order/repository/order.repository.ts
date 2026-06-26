@@ -34,6 +34,7 @@ export class OrderRepository {
     latitude?: number;
     longitude?: number;
     distanceKm?: number;
+    expiresAt?: Date;
     items: {
       productId: string;
       productName: string;
@@ -63,6 +64,15 @@ export class OrderRepository {
     return this.prisma.order.findUnique({
       where: { orderNumber },
       include: ORDER_INCLUDE,
+    });
+  }
+
+  /** Order pending yang sudah melewati `expiresAt` (untuk auto-expire). */
+  findExpiredPending(now: Date): Promise<OrderWithRelations[]> {
+    return this.prisma.order.findMany({
+      where: { status: 'pending', expiresAt: { lt: now } },
+      include: ORDER_INCLUDE,
+      take: 50,
     });
   }
 

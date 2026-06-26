@@ -7,6 +7,7 @@ import { OrderRepository } from './repository/order.repository';
 import { CustomerRepository } from './repository/customer.repository';
 import { OrderContract } from './order.contract';
 import { OrderService } from './order.service';
+import { OrderExpiryScheduler } from './order-expiry.scheduler';
 import {
   CreateOrderUseCase,
   FindAllOrdersUseCase,
@@ -24,6 +25,7 @@ import {
     CustomerRepository,
     OrderService,
     { provide: OrderContract, useExisting: OrderService },
+    OrderExpiryScheduler,
     CreateOrderUseCase,
     FindAllOrdersUseCase,
     FindOrderByIdUseCase,

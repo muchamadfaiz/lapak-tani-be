@@ -65,6 +65,12 @@ export class OrderResponseDto {
   })
   whatsappUrl?: string;
 
+  @ApiProperty({
+    nullable: true,
+    description: 'Batas waktu bayar untuk order pending (auto-cancel bila lewat)',
+  })
+  expiresAt: Date | null;
+
   @ApiProperty()
   createdAt: Date;
 

@@ -27,6 +27,7 @@ export class OrderMapper {
       shippingAddress: order.shippingAddress,
       notes: order.notes,
       distanceKm: order.distanceKm,
+      expiresAt: order.expiresAt,
       ...(whatsappUrl && { whatsappUrl }),
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,

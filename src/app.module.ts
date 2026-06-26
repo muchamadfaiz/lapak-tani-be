@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 import {
   appConfig,
@@ -63,6 +64,7 @@ import { RolesGuard } from './common';
         };
       },
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     EmailModule,
     AuthModule,
