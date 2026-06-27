@@ -5,6 +5,7 @@ import otpConfig from '../../config/otp.config';
 import { OtpController } from './otp.controller';
 import { OtpRepository } from './repository/otp.repository';
 import { FonnteService } from './whatsapp/fonnte.service';
+import { TwilioService } from './sms/twilio.service';
 import { OtpContract } from './otp.contract';
 import { OtpService } from './otp.service';
 
@@ -14,6 +15,7 @@ import { OtpService } from './otp.service';
   providers: [
     OtpRepository,
     FonnteService,
+    TwilioService,
     { provide: OtpContract, useClass: OtpService },
   ],
   exports: [OtpContract],

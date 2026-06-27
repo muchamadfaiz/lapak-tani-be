@@ -12,6 +12,7 @@ import otpConfig from '../../config/otp.config';
 import jwtConfig from '../../config/jwt.config';
 import { OtpRepository } from './repository/otp.repository';
 import { FonnteService } from './whatsapp/fonnte.service';
+import { TwilioService } from './sms/twilio.service';
 import { OtpContract, RequestOtpResult } from './otp.contract';
 
 const PHONE_TOKEN_TTL = '30d';
@@ -29,6 +30,7 @@ export class OtpService extends OtpContract {
     private readonly jwt: JwtService,
     private readonly repo: OtpRepository,
     private readonly fonnte: FonnteService,
+    private readonly twilio: TwilioService,
   ) {
     super();
   }
@@ -63,11 +65,15 @@ export class OtpService extends OtpContract {
     // Visibilitas dev (debug level → tak tampil di prod yang pakai level info).
     this.logger.debug(`OTP ${purpose} untuk ${phone}: ${code}`);
 
-    // Kirim via WhatsApp bila fitur aktif.
+    // Kirim via channel terpilih (WhatsApp/Fonnte atau SMS/Twilio) bila aktif.
     let sent = false;
     if (this.cfg.enabled) {
-      const msg = `Kode OTP Lapak Tani kamu: *${code}*\nBerlaku ${this.cfg.ttlMinutes} menit. Jangan beri tahu siapa pun.`;
-      await this.fonnte.sendMessage(phone, msg);
+      const msg = `Kode OTP Lapak Tani kamu: ${code}. Berlaku ${this.cfg.ttlMinutes} menit. Jangan beri tahu siapa pun.`;
+      if (this.cfg.channel === 'sms') {
+        await this.twilio.sendMessage(phone, msg);
+      } else {
+        await this.fonnte.sendMessage(phone, msg);
+      }
       sent = true;
     }
 
