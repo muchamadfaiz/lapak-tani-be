@@ -4,4 +4,5 @@ export { default as jwtConfig } from './jwt.config';
 export { default as storageConfig } from './storage.config';
 export { default as emailConfig } from './email.config';
 export { default as paymentConfig } from './payment.config';
+export { default as otpConfig } from './otp.config';
 export { validate } from './env.validation';
