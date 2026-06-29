@@ -2,8 +2,9 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('otp', () => ({
   enabled: process.env.OTP_ENABLED === 'true',
-  // Channel pengiriman OTP: 'whatsapp' (Fonnte) atau 'sms' (Twilio).
-  channel: (process.env.OTP_CHANNEL || 'whatsapp') as 'whatsapp' | 'sms',
+  // Channel pengiriman OTP: 'whatsapp' (Fonnte), 'sms' (Twilio), atau
+  // 'screen' (kode dikembalikan di response — DEMO/TIDAK AMAN, tanpa kirim).
+  channel: (process.env.OTP_CHANNEL || 'whatsapp') as 'whatsapp' | 'sms' | 'screen',
   fonnteToken: process.env.FONNTE_TOKEN || '',
   // Twilio (SMS)
   twilioSid: process.env.TWILIO_ACCOUNT_SID || '',

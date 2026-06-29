@@ -65,9 +65,11 @@ export class OtpService extends OtpContract {
     // Visibilitas dev (debug level → tak tampil di prod yang pakai level info).
     this.logger.debug(`OTP ${purpose} untuk ${phone}: ${code}`);
 
-    // Kirim via channel terpilih (WhatsApp/Fonnte atau SMS/Twilio) bila aktif.
+    // Kirim via channel terpilih bila aktif.
+    // - whatsapp → Fonnte, sms → Twilio (keduanya benar-benar kirim ke pemilik nomor)
+    // - screen   → TIDAK kirim; kode dikembalikan di response (DEMO, tak aman)
     let sent = false;
-    if (this.cfg.enabled) {
+    if (this.cfg.enabled && this.cfg.channel !== 'screen') {
       const msg = `Kode OTP Lapak Tani kamu: ${code}. Berlaku ${this.cfg.ttlMinutes} menit. Jangan beri tahu siapa pun.`;
       if (this.cfg.channel === 'sms') {
         await this.twilio.sendMessage(phone, msg);
@@ -77,10 +79,12 @@ export class OtpService extends OtpContract {
       sent = true;
     }
 
+    // Kode dikembalikan di response saat: non-production (dev), ATAU channel=screen.
+    const exposeCode = !this.isProd || this.cfg.channel === 'screen';
     return {
       sent,
       expiresInSec: this.cfg.ttlMinutes * 60,
-      ...(this.isProd ? {} : { devCode: code }), // dev only
+      ...(exposeCode ? { devCode: code } : {}),
     };
   }
 
