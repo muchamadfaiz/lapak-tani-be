@@ -20,3 +20,20 @@ export function haversineKm(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
+/**
+ * Faktor koreksi: jarak jalan biasanya ~1,3× jarak garis lurus (Haversine).
+ * Dipakai untuk estimasi ongkir & jarak ke outlet tanpa layanan peta eksternal.
+ * (Bisa di-upgrade ke routing asli mis. OpenRouteService nanti.)
+ */
+export const ROAD_DISTANCE_FACTOR = 1.3;
+
+/** Perkiraan jarak jalan (km) = Haversine × faktor koreksi. */
+export function roadDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  return haversineKm(lat1, lon1, lat2, lon2) * ROAD_DISTANCE_FACTOR;
+}
