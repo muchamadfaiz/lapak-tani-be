@@ -34,8 +34,8 @@ export class ProductRepository {
     });
   }
 
-  findAll(filter: ProductFilter): Promise<Product[]> {
-    const where: Prisma.ProductWhereInput = {
+  private buildWhere(filter: ProductFilter): Prisma.ProductWhereInput {
+    return {
       deletedAt: null,
       ...(filter.outletId && { outletId: filter.outletId }),
       ...(filter.categoryId && { categoryId: filter.categoryId }),
@@ -45,10 +45,27 @@ export class ProductRepository {
         name: { contains: filter.search, mode: 'insensitive' },
       }),
     };
-    return this.prisma.product.findMany({
-      where,
-      orderBy: { name: 'asc' },
-    });
+  }
+
+  /** Daftar produk terpaginasi + total (untuk meta). */
+  findAndCount(
+    filter: ProductFilter,
+    opts: {
+      skip: number;
+      take: number;
+      orderBy: Prisma.ProductOrderByWithRelationInput;
+    },
+  ): Promise<[Product[], number]> {
+    const where = this.buildWhere(filter);
+    return this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        orderBy: opts.orderBy,
+        skip: opts.skip,
+        take: opts.take,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
   }
 
   update(id: string, data: Prisma.ProductUpdateInput): Promise<Product> {

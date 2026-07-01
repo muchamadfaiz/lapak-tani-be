@@ -1,8 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import { PageOptionsDto } from '../../../common';
 
-export class FindProductsQueryDto {
+/**
+ * Query list produk: paginasi (page/limit/sortBy/order dari PageOptionsDto) +
+ * filter. Default limit 10 (maks 100).
+ */
+export class FindProductsQueryDto extends PageOptionsDto {
   @ApiPropertyOptional({ description: 'Filter per outlet' })
   @IsOptional()
   @IsUUID()

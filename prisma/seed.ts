@@ -166,6 +166,72 @@ async function main() {
     await prisma.product.upsert({ where: { id: p.id }, update: {}, create: p });
   }
   console.log(`Seeded ${PRODUCTS.length} products`);
+
+  // ── 5d. Seed order 'completed' untuk demo Top Seller ──
+  // /top-seller = agregasi quantity order_items pada order berstatus completed.
+  // Kita buat 1 order completed per outlet (berisi produk outlet tsb) dengan
+  // quantity menurun mengikuti urutan daftar PRODUCTS, sehingga tiap produk
+  // punya angka terjual berbeda & 10 teratas muncul di /top-seller.
+  type SeedProduct = (typeof PRODUCTS)[number];
+
+  const seedCustomer = await prisma.customer.upsert({
+    where: { phone: '6285800000001' }, // format kanonik (lihat normalizePhone)
+    update: {},
+    create: {
+      id: 'd4000000-0000-4000-8000-000000000001',
+      phone: '6285800000001',
+      name: 'Pelanggan Demo',
+    },
+  });
+
+  // Quantity terjual per produk: menurun sesuai urutan daftar (produk pertama
+  // paling laris). Semua distinct & positif → peringkat top-seller jelas.
+  const soldQty = new Map(PRODUCTS.map((p, i) => [p.id, 20 - i]));
+
+  // Kelompokkan produk per outlet → 1 order completed per outlet.
+  const byOutlet = new Map<string, SeedProduct[]>();
+  for (const p of PRODUCTS) {
+    const arr = byOutlet.get(p.outletId) ?? [];
+    arr.push(p);
+    byOutlet.set(p.outletId, arr);
+  }
+
+  let seedOrderIdx = 0;
+  for (const [outletId, prods] of byOutlet) {
+    seedOrderIdx += 1;
+    const suffix = String(seedOrderIdx).padStart(2, '0');
+    const orderId = `d4000000-0000-4000-8000-0000000100${suffix}`;
+    const items = prods.map((p) => {
+      const quantity = soldQty.get(p.id)!;
+      return {
+        productId: p.id,
+        productName: p.name, // snapshot
+        price: p.price,
+        quantity,
+        subtotal: p.price * quantity,
+      };
+    });
+    const subtotal = items.reduce((s, it) => s + it.subtotal, 0);
+    const shippingCost = 0;
+    await prisma.order.upsert({
+      where: { id: orderId },
+      update: {}, // insert-only, idempotent
+      create: {
+        id: orderId,
+        orderNumber: `LT-SEED-${String(seedOrderIdx).padStart(4, '0')}`,
+        customerId: seedCustomer.id,
+        outletId,
+        status: 'completed',
+        subtotal,
+        shippingCost,
+        total: subtotal + shippingCost,
+        paymentMethod: 'transfer_bca',
+        shippingAddress: 'Alamat demo pelanggan (seed)',
+        items: { create: items },
+      },
+    });
+  }
+  console.log(`Seeded ${seedOrderIdx} completed orders (demo Top Seller)`);
 }
 
 main()
