@@ -18,12 +18,6 @@ export class TopSellerResponseDto {
   imageUrl: string | null;
 
   @ApiProperty()
-  outletId: string;
-
-  @ApiProperty()
-  stock: number;
-
-  @ApiProperty()
   isAvailable: boolean;
 
   @ApiProperty({ example: 42, description: 'Total unit terjual (order completed)' })

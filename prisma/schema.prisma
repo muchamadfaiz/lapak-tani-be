@@ -45,11 +45,9 @@ model Product {
   unit        String? // satuan: kg, gram, pcs, ikat, dll
   imageUrl    String?
 
-  // Soft reference (TANPA FK lintas-modul) — divalidasi via CategoryContract/OutletContract.
+  // Soft reference (TANPA FK lintas-modul) — divalidasi via CategoryContract.
   categoryId  String
-  outletId    String
 
-  stock       Int      @default(0)
   isAvailable Boolean  @default(true)
 
   // Produk unggulan (ditandai admin) — tampil di section "Produk Pilihan".
@@ -58,12 +56,34 @@ model Product {
   // Soft delete: null = aktif. Produk terhapus disembunyikan dari query.
   deletedAt   DateTime?
 
+  // Stok per outlet: satu produk dijual di semua outlet, stoknya beda-beda.
+  outletStocks ProductOutlet[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@index([outletId])
   @@index([categoryId])
   @@map("products")
+}
+
+// Stok sebuah produk pada sebuah outlet. Harga produk global (di Product);
+// yang beda per outlet hanya stok. Dimiliki modul Product (via ProductRepository).
+model ProductOutlet {
+  id        String  @id @default(uuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Soft reference ke Outlet (TANPA FK lintas-modul) — divalidasi via OutletContract.
+  outletId  String
+
+  stock     Int     @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, outletId])
+  @@index([outletId])
+  @@map("product_outlets")
 }
 
 model Customer {

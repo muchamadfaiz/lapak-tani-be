@@ -1,14 +1,13 @@
 /**
- * Referensi produk untuk modul lain (Order: snapshot harga, validasi outlet,
- * cek stok/ketersediaan).
+ * Referensi produk untuk modul lain (Order: snapshot harga & nama, cek
+ * ketersediaan). Stok TIDAK di sini karena bersifat per-outlet — ambil lewat
+ * `getStock(outletId, ...)`.
  */
 export interface ProductRef {
   id: string;
   name: string;
   price: number;
   imageUrl: string | null;
-  outletId: string;
-  stock: number;
   isAvailable: boolean;
 }
 
@@ -23,19 +22,26 @@ export abstract class ProductContract {
   /** Ambil banyak produk sekaligus (hindari N+1 saat Order memproses item). */
   abstract findByIds(ids: string[]): Promise<ProductRef[]>;
 
+  /** Stok beberapa produk pada satu outlet → productId → stock (0 bila tak ada). */
+  abstract getStock(
+    outletId: string,
+    productIds: string[],
+  ): Promise<Map<string, number>>;
+
   /**
-   * Kurangi stok beberapa produk secara atomik (dipakai saat order dibuat).
-   * Melempar error bila ada stok yang tidak mencukupi (semua di-rollback).
+   * Kurangi stok beberapa produk pada SATU outlet secara atomik (saat order
+   * dibuat). Melempar error bila stok tak cukup (semua di-rollback).
    */
   abstract decrementStock(
+    outletId: string,
     items: { productId: string; quantity: number }[],
   ): Promise<void>;
 
   /**
-   * Kembalikan stok beberapa produk (dipakai saat order dibatalkan).
-   * Aman bila produk sudah dihapus (di-skip).
+   * Kembalikan stok beberapa produk pada satu outlet (saat order dibatalkan).
    */
   abstract restoreStock(
+    outletId: string,
     items: { productId: string; quantity: number }[],
   ): Promise<void>;
 }

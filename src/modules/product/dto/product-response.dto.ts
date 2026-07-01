@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class OutletStockResponseDto {
+  @ApiProperty()
+  outletId: string;
+
+  @ApiProperty()
+  stock: number;
+}
+
 export class ProductResponseDto {
   @ApiProperty()
   id: string;
@@ -25,11 +33,17 @@ export class ProductResponseDto {
   @ApiProperty()
   categoryId: string;
 
-  @ApiProperty()
-  outletId: string;
-
-  @ApiProperty()
+  @ApiProperty({
+    description:
+      'Stok. Bila query menyertakan outletId → stok outlet itu; jika tidak → total semua outlet.',
+  })
   stock: number;
+
+  @ApiPropertyOptional({
+    type: [OutletStockResponseDto],
+    description: 'Rincian stok per outlet (disertakan pada endpoint admin).',
+  })
+  outletStocks?: OutletStockResponseDto[];
 
   @ApiProperty()
   isAvailable: boolean;

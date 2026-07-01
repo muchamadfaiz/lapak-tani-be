@@ -40,8 +40,6 @@ export class FindTopSellersUseCase {
           name: p.name,
           price: p.price,
           imageUrl: p.imageUrl,
-          outletId: p.outletId,
-          stock: p.stock,
           isAvailable: p.isAvailable,
           soldCount: r.soldCount,
         };

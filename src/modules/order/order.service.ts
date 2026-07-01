@@ -51,6 +51,7 @@ export class OrderService extends OrderContract {
     // Restock saat order dibatalkan (dari status non-cancelled).
     if (status === 'cancelled' && existing.status !== 'cancelled') {
       await this.productContract.restoreStock(
+        existing.outletId,
         existing.items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,

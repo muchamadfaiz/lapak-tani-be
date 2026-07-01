@@ -14,6 +14,6 @@ export class FindProductByIdUseCase {
     }
     return asAdmin
       ? ProductMapper.toAdminResponseDto(product)
-      : ProductMapper.toResponseDto(product);
+      : ProductMapper.toDetailDto(product);
   }
 }

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Product } from '@prisma/client';
-import { ProductRepository } from './repository/product.repository';
+import {
+  ProductRepository,
+  ProductWithStocks,
+} from './repository/product.repository';
 import { ProductContract, ProductRef } from './product.contract';
 
 /**
@@ -23,22 +25,30 @@ export class ProductService extends ProductContract {
     return products.map((p) => ProductService.toRef(p));
   }
 
-  decrementStock(items: { productId: string; quantity: number }[]): Promise<void> {
-    return this.productRepository.decrementStock(items);
+  getStock(outletId: string, productIds: string[]): Promise<Map<string, number>> {
+    return this.productRepository.getStockForOutlet(outletId, productIds);
   }
 
-  restoreStock(items: { productId: string; quantity: number }[]): Promise<void> {
-    return this.productRepository.restoreStock(items);
+  decrementStock(
+    outletId: string,
+    items: { productId: string; quantity: number }[],
+  ): Promise<void> {
+    return this.productRepository.decrementStock(outletId, items);
   }
 
-  private static toRef(product: Product): ProductRef {
+  restoreStock(
+    outletId: string,
+    items: { productId: string; quantity: number }[],
+  ): Promise<void> {
+    return this.productRepository.restoreStock(outletId, items);
+  }
+
+  private static toRef(product: ProductWithStocks): ProductRef {
     return {
       id: product.id,
       name: product.name,
       price: product.price,
       imageUrl: product.imageUrl,
-      outletId: product.outletId,
-      stock: product.stock,
       isAvailable: product.isAvailable,
     };
   }

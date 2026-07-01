@@ -22,11 +22,13 @@ export class UpdateProductUseCase {
     if (dto.categoryId !== undefined) {
       await this.categoryContract.assertExists(dto.categoryId);
     }
-    if (dto.outletId !== undefined) {
-      await this.outletContract.assertExists(dto.outletId);
+    if (dto.stocks) {
+      for (const s of dto.stocks) {
+        await this.outletContract.assertExists(s.outletId);
+      }
     }
 
-    const product = await this.productRepository.update(id, {
+    await this.productRepository.update(id, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.description !== undefined && { description: dto.description }),
       ...(dto.price !== undefined && { price: dto.price }),
@@ -34,11 +36,16 @@ export class UpdateProductUseCase {
       ...(dto.unit !== undefined && { unit: dto.unit }),
       ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
       ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
-      ...(dto.outletId !== undefined && { outletId: dto.outletId }),
-      ...(dto.stock !== undefined && { stock: dto.stock }),
       ...(dto.isAvailable !== undefined && { isAvailable: dto.isAvailable }),
       ...(dto.isFeatured !== undefined && { isFeatured: dto.isFeatured }),
     });
-    return ProductMapper.toResponseDto(product);
+
+    if (dto.stocks) {
+      await this.productRepository.setStocks(id, dto.stocks);
+    }
+
+    // Ambil ulang agar stok terbaru & outletStocks terisi di response.
+    const fresh = await this.productRepository.findById(id);
+    return ProductMapper.toAdminResponseDto(fresh!);
   }
 }

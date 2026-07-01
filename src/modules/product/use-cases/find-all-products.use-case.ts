@@ -13,7 +13,6 @@ export class FindAllProductsUseCase {
   ): Promise<{ data: ProductResponseDto[]; meta: PageMetaDto }> {
     const [products, totalData] = await this.productRepository.findAndCount(
       {
-        outletId: query.outletId,
         categoryId: query.categoryId,
         search: query.search,
         available: query.available,
@@ -30,7 +29,8 @@ export class FindAllProductsUseCase {
     );
 
     return {
-      data: ProductMapper.toResponseDtoList(products),
+      // outletId (bila ada) → stok yg ditampilkan = stok outlet itu.
+      data: ProductMapper.toResponseDtoList(products, query.outletId),
       meta: new PageMetaDto({
         page: query.page,
         limit: query.limit,

@@ -42,10 +42,11 @@ export class CreateOrderUseCase {
       throw new BadRequestException('Outlet sedang tidak aktif');
     }
 
-    // 2. Ambil semua produk sekaligus (via contract, hindari N+1)
+    // 2. Ambil semua produk + stok di outlet ini sekaligus (via contract, hindari N+1)
     const ids = [...new Set(dto.items.map((i) => i.productId))];
     const products = await this.productContract.findByIds(ids);
     const map = new Map<string, ProductRef>(products.map((p) => [p.id, p]));
+    const stockMap = await this.productContract.getStock(dto.outletId, ids);
 
     // 3. Validasi tiap item + bangun snapshot
     const items = dto.items.map((item) => {
@@ -55,16 +56,11 @@ export class CreateOrderUseCase {
           `Produk ${item.productId} tidak ditemukan`,
         );
       }
-      if (p.outletId !== dto.outletId) {
-        throw new BadRequestException(
-          `Produk "${p.name}" bukan dari outlet ini`,
-        );
-      }
       if (!p.isAvailable) {
         throw new BadRequestException(`Produk "${p.name}" tidak tersedia`);
       }
-      if (p.stock < item.quantity) {
-        throw new BadRequestException(`Stok "${p.name}" tidak cukup`);
+      if ((stockMap.get(p.id) ?? 0) < item.quantity) {
+        throw new BadRequestException(`Stok "${p.name}" tidak cukup di outlet ini`);
       }
       return {
         productId: p.id,
@@ -98,8 +94,9 @@ export class CreateOrderUseCase {
       dto.customerName,
     );
 
-    // 6. Kurangi stok secara atomik (anti oversell). Bila gagal, order tak dibuat.
+    // 6. Kurangi stok outlet ini secara atomik (anti oversell). Bila gagal, order tak dibuat.
     await this.productContract.decrementStock(
+      dto.outletId,
       items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
     );
 

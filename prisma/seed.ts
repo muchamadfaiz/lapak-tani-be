@@ -163,9 +163,41 @@ async function main() {
     { id: 'b3000000-0000-4000-8000-000000000016', name: 'Pupuk Kompos Organik 5kg', description: 'Kompos organik untuk menyuburkan tanah', price: 25000, categoryId: CAT_PUPUK, outletId: OUT_SAKO, stock: 50 },
   ];
   for (const p of PRODUCTS) {
-    await prisma.product.upsert({ where: { id: p.id }, update: {}, create: p });
+    // outletId & stock TIDAK lagi kolom produk (pindah ke product_outlets).
+    await prisma.product.upsert({
+      where: { id: p.id },
+      update: {},
+      create: {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        categoryId: p.categoryId,
+        isAvailable: p.isAvailable ?? true,
+      },
+    });
   }
   console.log(`Seeded ${PRODUCTS.length} products`);
+
+  // 5c-2. Stok per outlet (product_outlets): tiap produk dijual di SEMUA outlet,
+  // stok bervariasi — outlet asal penuh, outlet lain menurun (sebagian bisa 0,
+  // untuk mendemokan "ada yg ready ada yg enggak").
+  const OUTLET_IDS = OUTLETS.map((o) => o.id);
+  let poCount = 0;
+  for (const p of PRODUCTS) {
+    for (let j = 0; j < OUTLET_IDS.length; j++) {
+      const oid = OUTLET_IDS[j];
+      const stock =
+        oid === p.outletId ? p.stock : Math.max(0, p.stock - (j + 1) * 15);
+      await prisma.productOutlet.upsert({
+        where: { productId_outletId: { productId: p.id, outletId: oid } },
+        update: {},
+        create: { productId: p.id, outletId: oid, stock },
+      });
+      poCount += 1;
+    }
+  }
+  console.log(`Seeded ${poCount} product-outlet stocks`);
 
   // ── 5d. Seed order 'completed' untuk demo Top Seller ──
   // /top-seller = agregasi quantity order_items pada order berstatus completed.

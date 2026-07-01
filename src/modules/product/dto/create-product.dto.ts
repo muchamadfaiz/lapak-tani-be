@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsInt,
   IsOptional,
@@ -8,12 +10,26 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 
 // Kolom Int PostgreSQL maksimal 2.147.483.647. Batasi di bawahnya agar tak
 // overflow (angka kebesaran → 400 jelas, bukan 500 Prisma).
 const MAX_AMOUNT = 2_000_000_000; // Rupiah
 const MAX_STOCK = 1_000_000; // unit
+
+/** Stok produk pada satu outlet (dipakai saat buat/ubah produk). */
+export class OutletStockDto {
+  @ApiProperty({ description: 'ID outlet' })
+  @IsUUID()
+  outletId: string;
+
+  @ApiProperty({ default: 0, description: 'Stok di outlet ini' })
+  @IsInt()
+  @Min(0)
+  @Max(MAX_STOCK, { message: 'Stok terlalu besar (maks 1.000.000)' })
+  stock: number;
+}
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Beras Premium Pandan Wangi 5kg' })
@@ -53,16 +69,15 @@ export class CreateProductDto {
   @IsUUID()
   categoryId: string;
 
-  @ApiProperty({ description: 'ID outlet' })
-  @IsUUID()
-  outletId: string;
-
-  @ApiPropertyOptional({ default: 0 })
+  @ApiPropertyOptional({
+    type: [OutletStockDto],
+    description: 'Stok per outlet. Outlet yang tak disebut dianggap stok 0.',
+  })
   @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(MAX_STOCK, { message: 'Stok terlalu besar (maks 1.000.000)' })
-  stock?: number;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OutletStockDto)
+  stocks?: OutletStockDto[];
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()
