@@ -3,6 +3,7 @@ import { UserResponseDto } from './dto';
 export interface UserForAuth {
   id: string;
   email: string;
+  phone: string;
   fullName: string;
   passwordHash: string;
   isActive: boolean;
@@ -26,12 +27,15 @@ export abstract class UserContract {
   /** Cari user berdasarkan email untuk keperluan autentikasi. */
   abstract findByEmailForAuth(email: string): Promise<UserForAuth | null>;
 
+  abstract findByPhoneForAuth(phone: string): Promise<UserForAuth | null>;
+
   /** Cari user berdasarkan ID untuk keperluan token refresh/validasi JWT. */
   abstract findByIdForAuth(id: string): Promise<UserForAuth | null>;
 
   /** Membuat user baru beserta profil default (USER role). */
   abstract createForAuth(data: {
     email: string;
+    phone: string;
     passwordHash: string;
     fullName: string;
     emailVerifiedAt: Date | null;
