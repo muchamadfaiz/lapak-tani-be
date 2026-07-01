@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { DistanceModule } from '../distance';
 import { OutletController } from './outlet.controller';
 import { OutletRepository } from './repository/outlet.repository';
 import { OutletContract } from './outlet.contract';
@@ -12,6 +13,7 @@ import {
 } from './use-cases';
 
 @Module({
+  imports: [DistanceModule],
   controllers: [OutletController],
   providers: [
     OutletRepository,

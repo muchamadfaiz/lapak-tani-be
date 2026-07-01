@@ -307,3 +307,18 @@ model RefreshToken {
 
   @@map("refresh_tokens")
 }
+
+// Kode OTP (WhatsApp via Fonnte). codeHash = hash bcrypt (kode tak disimpan plain).
+model OtpCode {
+  id         String    @id @default(uuid())
+  phone      String // format kanonik 62...
+  codeHash   String
+  purpose    String    @default("verify") // verify | login | dll
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, purpose])
+  @@map("otp_codes")
+}

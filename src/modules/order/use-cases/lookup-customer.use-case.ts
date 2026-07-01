@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { OtpContract } from '../../otp';
 import { OrderRepository } from '../repository/order.repository';
 import { CustomerRepository } from '../repository/customer.repository';
 import { OrderMapper } from '../mapper/order.mapper';
@@ -14,12 +20,24 @@ export class LookupCustomerUseCase {
   constructor(
     private readonly customerRepository: CustomerRepository,
     private readonly orderRepository: OrderRepository,
+    private readonly otpContract: OtpContract,
   ) {}
 
-  async execute(rawPhone: string): Promise<CustomerLookupDto> {
+  async execute(rawPhone: string, otpToken?: string): Promise<CustomerLookupDto> {
     const phone = normalizePhone(rawPhone || '');
     if (phone.length < 8) {
       throw new BadRequestException('Nomor HP tidak valid');
+    }
+
+    // Gerbang OTP (bila fitur aktif): butuh token sesi-HP yang cocok.
+    if (this.otpContract.enabled) {
+      const verified = otpToken ? this.otpContract.verifyPhoneToken(otpToken) : null;
+      if (!verified || verified.phone !== phone) {
+        throw new ForbiddenException({
+          message: 'Verifikasi OTP diperlukan',
+          code: 'OTP_REQUIRED',
+        });
+      }
     }
 
     const customer = await this.customerRepository.findByPhone(phone);

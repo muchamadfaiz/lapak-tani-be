@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { haversineKm } from '../../../common';
+import { DistanceContract } from '../../distance';
 import { OutletContract } from '../../outlet';
 import { ProductContract, ProductRef } from '../../product';
 import { NotificationContract } from '../../notification';
@@ -29,6 +29,7 @@ export class CreateOrderUseCase {
     private readonly outletContract: OutletContract,
     private readonly productContract: ProductContract,
     private readonly notificationContract: NotificationContract,
+    private readonly distanceContract: DistanceContract,
   ) {}
 
   async execute(dto: CreateOrderDto): Promise<OrderResponseDto> {
@@ -80,15 +81,13 @@ export class CreateOrderUseCase {
     let distanceKm: number | undefined;
     let shippingCost = MIN_ONGKIR;
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
-      distanceKm =
-        Math.round(
-          haversineKm(
-            outlet.latitude,
-            outlet.longitude,
-            dto.latitude,
-            dto.longitude,
-          ) * 10,
-        ) / 10;
+      const raw = await this.distanceContract.distanceKm(
+        outlet.latitude,
+        outlet.longitude,
+        dto.latitude,
+        dto.longitude,
+      );
+      distanceKm = Math.round(raw * 10) / 10;
       shippingCost = calcShippingCost(distanceKm);
     }
     const total = subtotal + shippingCost;
