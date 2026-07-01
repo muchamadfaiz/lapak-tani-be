@@ -26,6 +26,7 @@ import { OrderModule } from './modules/order';
 import { NotificationModule } from './modules/notification';
 import { PaymentModule } from './modules/payment';
 import { OtpModule } from './modules/otp';
+import { BannerModule } from './modules/banner';
 
 import { RolesGuard } from './common';
 
@@ -79,6 +80,7 @@ import { RolesGuard } from './common';
     NotificationModule,
     PaymentModule,
     OtpModule,
+    BannerModule,
   ],
   providers: [
     // ThrottlerGuard didaftarkan pertama agar rate-limit jalan sebelum auth
