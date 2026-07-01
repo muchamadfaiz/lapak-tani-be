@@ -103,4 +103,25 @@ export class OrderRepository {
       include: ORDER_INCLUDE,
     });
   }
+
+  /**
+   * Produk terlaris = total quantity terjual, HANYA dari order yang sudah
+   * `completed` (order pending/cancelled tidak dihitung). Urut dari yang paling
+   * banyak terjual, ambil `limit` teratas.
+   */
+  async topSellingProductIds(
+    limit: number,
+  ): Promise<{ productId: string; soldCount: number }[]> {
+    const rows = await this.prisma.orderItem.groupBy({
+      by: ['productId'],
+      where: { order: { status: 'completed' } },
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: 'desc' } },
+      take: limit,
+    });
+    return rows.map((r) => ({
+      productId: r.productId,
+      soldCount: r._sum.quantity ?? 0,
+    }));
+  }
 }

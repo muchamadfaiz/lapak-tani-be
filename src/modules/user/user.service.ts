@@ -28,6 +28,12 @@ export class UserService extends UserContract {
     return this.mapToUserForAuth(user);
   }
 
+  async findByPhoneForAuth(phone: string): Promise<UserForAuth | null> {
+    const user = await this.userRepository.findByPhoneWithRelations(phone);
+    if (!user) return null;
+    return this.mapToUserForAuth(user);
+  }
+
   async findByIdForAuth(id: string): Promise<UserForAuth | null> {
     const user = await this.userRepository.findByIdWithRelations(id);
     if (!user) return null;
@@ -36,6 +42,7 @@ export class UserService extends UserContract {
 
   async createForAuth(data: {
     email: string;
+    phone: string;
     passwordHash: string;
     fullName: string;
     emailVerifiedAt: Date | null;
@@ -47,6 +54,7 @@ export class UserService extends UserContract {
 
     const user = await this.userRepository.createWithProfileForAuth({
       email: data.email,
+      phone: data.phone,
       passwordHash: data.passwordHash,
       roleId: defaultRole.id,
       emailVerifiedAt: data.emailVerifiedAt,
@@ -72,6 +80,7 @@ export class UserService extends UserContract {
     return {
       id: user.id,
       email: user.email,
+      phone: user.profile?.phone ?? '',
       fullName: user.profile?.fullName ?? '',
       passwordHash: user.password,
       isActive: user.isActive,

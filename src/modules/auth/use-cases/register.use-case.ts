@@ -34,6 +34,7 @@ export class RegisterUseCase {
     // 3. Create user via UserContract
     const user = await this.userContract.createForAuth({
       email: dto.email,
+      phone: dto.phone,
       passwordHash: hashedPassword,
       fullName: dto.fullName,
       emailVerifiedAt: emailEnabled ? null : new Date(),

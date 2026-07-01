@@ -164,8 +164,17 @@ export class UserRepository {
     });
   }
 
+  /** Cari user by nomor HP (disimpan di profile). null bila tidak ada. */
+  findByPhoneWithRelations(phone: string): Promise<UserWithRelations | null> {
+    return this.prisma.user.findFirst({
+      where: { profile: { phone } },
+      include: USER_INCLUDE,
+    });
+  }
+
   createWithProfileForAuth(data: {
     email: string;
+    phone: string;
     passwordHash: string;
     roleId: string;
     emailVerifiedAt: Date | null;
@@ -185,6 +194,7 @@ export class UserRepository {
         data: {
           userId: created.id,
           fullName: data.fullName,
+          phone: data.phone,
         },
       });
 
