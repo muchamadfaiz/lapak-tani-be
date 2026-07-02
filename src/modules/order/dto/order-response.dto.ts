@@ -51,6 +51,9 @@ export class OrderResponseDto {
   @ApiProperty()
   paymentMethod: string;
 
+  @ApiProperty({ example: 'instant', description: 'instant | scheduled_morning | scheduled_afternoon' })
+  deliveryOption: string;
+
   @ApiProperty()
   shippingAddress: string;
 

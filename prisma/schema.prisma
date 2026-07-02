@@ -134,6 +134,9 @@ model Order {
 
   status      String @default("pending") // pending, confirmed, processing, shipped, completed, cancelled
 
+  // Opsi pengiriman: instant (10rb/km) | scheduled_morning | scheduled_afternoon (2rb/km).
+  deliveryOption String @default("instant")
+
   subtotal      Int
   shippingCost  Int
   total         Int

@@ -29,6 +29,7 @@ export class OrderRepository {
     shippingCost: number;
     total: number;
     paymentMethod: string;
+    deliveryOption: string;
     shippingAddress: string;
     notes?: string;
     latitude?: number;

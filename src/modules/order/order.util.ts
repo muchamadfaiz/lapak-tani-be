@@ -1,13 +1,33 @@
 // Tarif ongkir (Rupiah). Sesuaikan bila perlu.
-export const ONGKIR_PER_KM = 10000;
 export const MIN_ONGKIR = 5000;
 
+/** Opsi pengiriman + tarif per km. Instan langsung (mahal), jadwal batch (murah). */
+export const DELIVERY_OPTIONS = [
+  'instant',
+  'scheduled_morning',
+  'scheduled_afternoon',
+] as const;
+export type DeliveryOption = (typeof DELIVERY_OPTIONS)[number];
+
+export const DELIVERY_RATE_PER_KM: Record<DeliveryOption, number> = {
+  instant: 10000,
+  scheduled_morning: 2000,
+  scheduled_afternoon: 2000,
+};
+
+// Backward-compat: tarif instan = tarif lama.
+export const ONGKIR_PER_KM = DELIVERY_RATE_PER_KM.instant;
+
 /**
- * Ongkir = jarak(km) × Rp10.000, dibulatkan ke kelipatan 1.000, minimal Rp5.000.
- * (Logika sama dengan FE; perhitungan dipindah ke BE.)
+ * Ongkir = jarak(km) × tarif opsi, dibulatkan ke kelipatan 1.000, min Rp5.000.
+ * Default opsi `instant` (perilaku lama).
  */
-export function calcShippingCost(distanceKm: number): number {
-  const raw = Math.round((distanceKm * ONGKIR_PER_KM) / 1000) * 1000;
+export function calcShippingCost(
+  distanceKm: number,
+  option: DeliveryOption = 'instant',
+): number {
+  const rate = DELIVERY_RATE_PER_KM[option] ?? DELIVERY_RATE_PER_KM.instant;
+  const raw = Math.round((distanceKm * rate) / 1000) * 1000;
   return Math.max(MIN_ONGKIR, raw);
 }
 
@@ -40,6 +60,20 @@ export function generateOrderNumber(): string {
   return `ORD-${ymd}-${rand}`;
 }
 
+/** Label opsi pengiriman untuk tampilan (WA, admin, dll). */
+export function deliveryOptionLabel(option: string): string {
+  switch (option) {
+    case 'instant':
+      return 'Instan';
+    case 'scheduled_morning':
+      return 'Jadwal Pagi';
+    case 'scheduled_afternoon':
+      return 'Jadwal Sore';
+    default:
+      return option;
+  }
+}
+
 /** Bangun link WhatsApp ke admin berisi ringkasan order (pembayaran manual). */
 export function buildWhatsappUrl(
   adminNumber: string,
@@ -52,6 +86,7 @@ export function buildWhatsappUrl(
     shippingCost: number;
     total: number;
     paymentMethod: string;
+    deliveryOption: string;
     shippingAddress: string;
   },
 ): string {
@@ -72,6 +107,7 @@ export function buildWhatsappUrl(
     `Ongkir: ${rupiah(data.shippingCost)}`,
     `Total: ${rupiah(data.total)}`,
     `Metode bayar: ${data.paymentMethod}`,
+    `Pengiriman: ${deliveryOptionLabel(data.deliveryOption)}`,
     `Alamat: ${data.shippingAddress}`,
   ];
   return `https://wa.me/${adminNumber}?text=${encodeURIComponent(lines.join('\n'))}`;

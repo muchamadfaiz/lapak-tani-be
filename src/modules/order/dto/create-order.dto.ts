@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -15,6 +16,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { DELIVERY_OPTIONS } from '../order.util';
 
 export class OrderItemInputDto {
   @ApiProperty({ description: 'ID produk' })
@@ -59,6 +61,15 @@ export class CreateOrderDto {
   @IsNotEmpty()
   paymentMethod: string;
 
+  @ApiPropertyOptional({
+    enum: DELIVERY_OPTIONS,
+    default: 'instant',
+    description: 'Opsi pengiriman: instant (10rb/km) | scheduled_morning | scheduled_afternoon (2rb/km)',
+  })
+  @IsOptional()
+  @IsIn(DELIVERY_OPTIONS)
+  deliveryOption?: (typeof DELIVERY_OPTIONS)[number];
+
   @ApiPropertyOptional({ example: 'Lantai 2, dekat lift' })
   @IsOptional()
   @IsString()
@@ -79,4 +90,15 @@ export class CreateOrderDto {
   @Min(-180)
   @Max(180)
   longitude?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Jarak ke tujuan (km) — dipakai untuk ongkir bila lat/lng tak dikirim (mis. dari app mobile)',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(500)
+  distanceKm?: number;
 }

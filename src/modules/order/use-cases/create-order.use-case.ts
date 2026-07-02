@@ -76,6 +76,7 @@ export class CreateOrderUseCase {
 
     let distanceKm: number | undefined;
     let shippingCost = MIN_ONGKIR;
+    const deliveryOption = dto.deliveryOption ?? 'instant';
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
       const raw = await this.distanceContract.distanceKm(
         outlet.latitude,
@@ -84,7 +85,12 @@ export class CreateOrderUseCase {
         dto.longitude,
       );
       distanceKm = Math.round(raw * 10) / 10;
-      shippingCost = calcShippingCost(distanceKm);
+      // Tarif tergantung opsi: instan 10rb/km, jadwal (pagi/sore) 2rb/km.
+      shippingCost = calcShippingCost(distanceKm, deliveryOption);
+    } else if (dto.distanceKm !== undefined) {
+      // App mobile mengirim jarak langsung (dihitung dari GPS di sisi klien).
+      distanceKm = Math.round(dto.distanceKm * 10) / 10;
+      shippingCost = calcShippingCost(distanceKm, deliveryOption);
     }
     const total = subtotal + shippingCost;
 
@@ -110,6 +116,7 @@ export class CreateOrderUseCase {
       shippingCost,
       total,
       paymentMethod: dto.paymentMethod,
+      deliveryOption,
       shippingAddress: dto.shippingAddress,
       notes: dto.notes,
       latitude: dto.latitude,
@@ -141,6 +148,7 @@ export class CreateOrderUseCase {
       shippingCost,
       total,
       paymentMethod: dto.paymentMethod,
+      deliveryOption,
       shippingAddress: dto.shippingAddress,
     });
 

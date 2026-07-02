@@ -24,6 +24,7 @@ export class OrderMapper {
       shippingCost: order.shippingCost,
       total: order.total,
       paymentMethod: order.paymentMethod,
+      deliveryOption: order.deliveryOption,
       shippingAddress: order.shippingAddress,
       notes: order.notes,
       distanceKm: order.distanceKm,
