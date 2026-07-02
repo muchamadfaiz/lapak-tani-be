@@ -3,6 +3,7 @@ export interface OrderDetailRef {
   orderNumber: string;
   status: string;
   total: number;
+  shippingCost: number;
   customerName: string | null;
   phone: string;
   items: { productName: string; price: number; quantity: number }[];

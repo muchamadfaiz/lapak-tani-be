@@ -76,6 +76,7 @@ export class OrderService extends OrderContract {
       orderNumber: o.orderNumber,
       status: o.status,
       total: o.total,
+      shippingCost: o.shippingCost,
       customerName: o.customer.name,
       phone: o.customer.phone,
       items: o.items.map((i) => ({

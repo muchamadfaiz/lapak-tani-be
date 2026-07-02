@@ -31,8 +31,10 @@ export class PaymentService {
     return this.midtrans.createTransaction({
       orderNumber: order.orderNumber,
       grossAmount: order.total,
+      shippingCost: order.shippingCost,
       customerName: order.customerName,
       phone: order.phone,
+      items: order.items,
     });
   }
 

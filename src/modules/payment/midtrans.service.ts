@@ -46,17 +46,56 @@ export class MidtransService {
   async createTransaction(params: {
     orderNumber: string;
     grossAmount: number;
+    shippingCost: number;
     customerName?: string | null;
     phone: string;
+    items: { productName: string; price: number; quantity: number }[];
   }): Promise<SnapResult> {
+    // item_details WAJIB dikirim & totalnya harus PERSIS = gross_amount, kalau
+    // tidak beberapa channel (mis. OCTO Clicks, VA, direct debit) menolak dgn
+    // "Invalid payment data". Channel toleran (kartu/QRIS) jalan walau tanpa ini.
+    const itemDetails: {
+      id: string;
+      price: number;
+      quantity: number;
+      name: string;
+    }[] = params.items.map((i, idx) => ({
+      id: `ITEM-${idx + 1}`,
+      price: i.price,
+      quantity: i.quantity,
+      name: i.productName.slice(0, 50), // Midtrans batas 50 char
+    }));
+    if (params.shippingCost > 0) {
+      itemDetails.push({
+        id: 'SHIPPING',
+        price: params.shippingCost,
+        quantity: 1,
+        name: 'Ongkos Kirim',
+      });
+    }
+    // Jaring pengaman: pastikan jumlah item_details == gross_amount.
+    const sum = itemDetails.reduce((s, it) => s + it.price * it.quantity, 0);
+    if (sum !== params.grossAmount) {
+      itemDetails.push({
+        id: 'ADJUSTMENT',
+        price: params.grossAmount - sum,
+        quantity: 1,
+        name: 'Penyesuaian',
+      });
+    }
+
+    const digits = params.phone.replace(/[^0-9]/g, '');
     const res = await this.snap.createTransaction({
       transaction_details: {
         order_id: params.orderNumber,
         gross_amount: params.grossAmount,
       },
+      item_details: itemDetails,
       customer_details: {
         first_name: params.customerName || 'Pelanggan',
         phone: params.phone,
+        // Sebagian channel butuh email valid; disintesis dari No HP.
+        email: `${digits || 'guest'}@lapaktani.store`,
       },
     });
     return { token: res.token, redirectUrl: res.redirect_url };
