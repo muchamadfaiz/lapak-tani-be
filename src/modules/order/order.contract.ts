@@ -24,5 +24,6 @@ export abstract class OrderContract {
   abstract setStatusByNumber(
     orderNumber: string,
     status: string,
+    paymentMethod?: string,
   ): Promise<void>;
 }

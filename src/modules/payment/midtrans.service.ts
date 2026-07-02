@@ -14,6 +14,7 @@ export interface SnapResult {
 export interface PaymentStatus {
   orderNumber: string;
   status: string; // status order hasil mapping
+  paymentMethod?: string; // channel asli dari Midtrans (mis. "BCA VA", "GoPay")
 }
 
 /**
@@ -122,6 +123,39 @@ export class MidtransService {
     else if (tx === 'pending') status = 'pending';
     else if (['deny', 'cancel', 'expire', 'failure'].includes(tx)) status = 'cancelled';
 
-    return { orderNumber: stat.order_id, status };
+    return {
+      orderNumber: stat.order_id,
+      status,
+      paymentMethod: this.channelLabel(stat as unknown as Record<string, unknown>),
+    };
+  }
+
+  /** Ubah payment_type Midtrans → label channel yang enak dibaca. */
+  private channelLabel(stat: Record<string, unknown>): string | undefined {
+    const t = stat.payment_type as string | undefined;
+    if (!t) return undefined;
+    switch (t) {
+      case 'bank_transfer': {
+        const vas = stat.va_numbers as { bank?: string }[] | undefined;
+        const bank = vas?.[0]?.bank || (stat.permata_va_number ? 'permata' : '');
+        return bank ? `${bank.toUpperCase()} VA` : 'Virtual Account';
+      }
+      case 'echannel':
+        return 'Mandiri VA';
+      case 'gopay':
+        return 'GoPay';
+      case 'shopeepay':
+        return 'ShopeePay';
+      case 'qris':
+        return 'QRIS';
+      case 'credit_card':
+        return 'Kartu Kredit';
+      case 'cstore': {
+        const store = stat.store as string | undefined;
+        return store ? store.toUpperCase() : 'Gerai Retail';
+      }
+      default:
+        return t.toUpperCase();
+    }
   }
 }

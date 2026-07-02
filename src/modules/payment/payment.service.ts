@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { OrderContract } from '../order';
-import { MidtransService, SnapResult } from './midtrans.service';
+import { MidtransService, PaymentStatus, SnapResult } from './midtrans.service';
 
 @Injectable()
 export class PaymentService {
@@ -61,12 +61,11 @@ export class PaymentService {
     }
 
     try {
-      const { orderNumber, status } = await this.midtrans.readNotification({
-        order_id: order.orderNumber,
-      });
-      // Sinkronkan order (tak menunggu webhook). Idempotent & aman diulang.
+      const { orderNumber, status, paymentMethod } =
+        await this.midtrans.readNotification({ order_id: order.orderNumber });
+      // Sinkronkan order + channel bayar asli. Idempotent & aman diulang.
       try {
-        await this.orderContract.setStatusByNumber(orderNumber, status);
+        await this.orderContract.setStatusByNumber(orderNumber, status, paymentMethod);
       } catch (e) {
         this.logger.warn(`Sync status ${orderNumber}: ${(e as Error).message}`);
       }
@@ -86,7 +85,7 @@ export class PaymentService {
 
   /** Tangani webhook Midtrans → update status order. */
   async handleNotification(body: unknown): Promise<{ ok: boolean }> {
-    let parsed: { orderNumber: string; status: string };
+    let parsed: PaymentStatus;
     try {
       parsed = await this.midtrans.readNotification(body);
     } catch (e) {
@@ -97,7 +96,11 @@ export class PaymentService {
       return { ok: true };
     }
     try {
-      await this.orderContract.setStatusByNumber(parsed.orderNumber, parsed.status);
+      await this.orderContract.setStatusByNumber(
+        parsed.orderNumber,
+        parsed.status,
+        parsed.paymentMethod,
+      );
     } catch (e) {
       // Order mungkin tak ditemukan — log saja, tetap balas 200 ke Midtrans.
       this.logger.warn(`Webhook order ${parsed.orderNumber}: ${(e as Error).message}`);

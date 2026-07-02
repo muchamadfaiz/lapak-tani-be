@@ -96,10 +96,15 @@ export class OrderRepository {
     });
   }
 
-  updateStatus(id: string, status: string): Promise<OrderWithRelations> {
+  updateStatus(
+    id: string,
+    status: string,
+    paymentMethod?: string,
+  ): Promise<OrderWithRelations> {
     return this.prisma.order.update({
       where: { id },
-      data: { status },
+      // paymentMethod diisi channel asli dari Midtrans (mis. "BCA VA") saat bayar.
+      data: { status, ...(paymentMethod && { paymentMethod }) },
       include: ORDER_INCLUDE,
     });
   }

@@ -33,16 +33,22 @@ export class OrderService extends OrderContract {
   }
 
   /** Ubah status by orderNumber (dipakai webhook pembayaran). */
-  setStatusByNumber(orderNumber: string, status: string): Promise<void> {
+  setStatusByNumber(
+    orderNumber: string,
+    status: string,
+    paymentMethod?: string,
+  ): Promise<void> {
     return this.applyStatus(
       () => this.orderRepository.findByOrderNumber(orderNumber),
       status,
+      paymentMethod,
     );
   }
 
   private async applyStatus(
     find: () => Promise<OrderWithRelations | null>,
     status: string,
+    paymentMethod?: string,
   ): Promise<void> {
     const existing = await find();
     if (!existing) {
@@ -58,7 +64,7 @@ export class OrderService extends OrderContract {
         })),
       );
     }
-    await this.orderRepository.updateStatus(existing.id, status);
+    await this.orderRepository.updateStatus(existing.id, status, paymentMethod);
 
     // Award poin saat order selesai (idempotent, hanya transisi pertama).
     if (status === 'completed' && existing.status !== 'completed') {
