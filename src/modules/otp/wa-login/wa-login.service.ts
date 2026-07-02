@@ -4,6 +4,7 @@ import { randomInt } from 'crypto';
 import { normalizePhone } from '../../../common';
 import waLoginConfig from '../../../config/wa-login.config';
 import { OtpContract } from '../otp.contract';
+import { FonnteService } from '../whatsapp/fonnte.service';
 import { WaLoginRepository } from './wa-login.repository';
 
 // Karakter kode (tanpa yang ambigu: O/0, I/1) + prefix biar gampang diekstrak.
@@ -32,6 +33,7 @@ export class WaLoginService {
     private readonly cfg: ConfigType<typeof waLoginConfig>,
     private readonly repo: WaLoginRepository,
     private readonly otp: OtpContract,
+    private readonly fonnte: FonnteService,
   ) {}
 
   /** 1) App minta sesi login → dapat kode + link wa.me siap dibuka. */
@@ -74,6 +76,17 @@ export class WaLoginService {
     }
     await this.repo.markVerified(sess.id, phone);
     this.logger.log(`WA login verified: ${phone} (code ${code})`);
+
+    // Balas konfirmasi ke pengirim (best-effort — jangan gagalkan webhook).
+    this.fonnte
+      .sendMessage(
+        phone,
+        '✅ Berhasil! Nomor WhatsApp kamu sudah terverifikasi.\n' +
+          'Silakan kembali ke aplikasi Lapak Tani untuk melanjutkan.\n\n' +
+          '(Jangan bagikan pesan ini ke siapa pun.)',
+      )
+      .catch((e) => this.logger.warn(`Gagal kirim balasan WA: ${e}`));
+
     return { ok: true, matched: true };
   }
 
