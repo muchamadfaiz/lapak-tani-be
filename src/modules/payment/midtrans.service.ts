@@ -25,7 +25,7 @@ export class MidtransService {
   private readonly logger = new Logger(MidtransService.name);
   private readonly snap: {
     createTransaction: (p: unknown) => Promise<{ token: string; redirect_url: string }>;
-    transaction: { notification: (b: unknown) => Promise<Record<string, string>> };
+    transaction: { status: (orderId: string) => Promise<Record<string, string>> };
   };
 
   constructor(
@@ -62,9 +62,18 @@ export class MidtransService {
     return { token: res.token, redirectUrl: res.redirect_url };
   }
 
-  /** Verifikasi & baca webhook, kembalikan orderNumber + status order terpetakan. */
+  /**
+   * Baca webhook: ambil order_id dari body lalu tanyakan status OTORITATIF ke
+   * Midtrans (jangan percaya body mentah — juga menghindari bug method
+   * `transaction.notification()` di midtrans-client yang bisa 404).
+   */
   async readNotification(body: unknown): Promise<PaymentStatus> {
-    const stat = await this.snap.transaction.notification(body);
+    const b = (body ?? {}) as Record<string, unknown>;
+    const orderId = String(b.order_id ?? '');
+    if (!orderId) {
+      throw new Error('Notifikasi tanpa order_id');
+    }
+    const stat = await this.snap.transaction.status(orderId);
     const tx = stat.transaction_status;
     const fraud = stat.fraud_status;
 

@@ -38,12 +38,21 @@ export class PaymentService {
 
   /** Tangani webhook Midtrans → update status order. */
   async handleNotification(body: unknown): Promise<{ ok: boolean }> {
-    const { orderNumber, status } = await this.midtrans.readNotification(body);
+    let parsed: { orderNumber: string; status: string };
     try {
-      await this.orderContract.setStatusByNumber(orderNumber, status);
+      parsed = await this.midtrans.readNotification(body);
+    } catch (e) {
+      // Notifikasi tak bisa diverifikasi (mis. order tak dikenal / "Test
+      // notification" dari dashboard). Tetap balas 200 agar Midtrans tak retry
+      // terus; TIDAK mengubah order apa pun (aman dari spoofing).
+      this.logger.warn(`Webhook tak terverifikasi: ${(e as Error).message}`);
+      return { ok: true };
+    }
+    try {
+      await this.orderContract.setStatusByNumber(parsed.orderNumber, parsed.status);
     } catch (e) {
       // Order mungkin tak ditemukan — log saja, tetap balas 200 ke Midtrans.
-      this.logger.warn(`Webhook order ${orderNumber}: ${(e as Error).message}`);
+      this.logger.warn(`Webhook order ${parsed.orderNumber}: ${(e as Error).message}`);
     }
     return { ok: true };
   }
