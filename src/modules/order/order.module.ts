@@ -19,6 +19,8 @@ import {
   UpdateOrderStatusUseCase,
   LookupCustomerUseCase,
   FindTopSellersUseCase,
+  SetPinUseCase,
+  VerifyPinUseCase,
 } from './use-cases';
 
 @Module({
@@ -38,6 +40,8 @@ import {
     UpdateOrderStatusUseCase,
     LookupCustomerUseCase,
     FindTopSellersUseCase,
+    SetPinUseCase,
+    VerifyPinUseCase,
   ],
   exports: [OrderContract],
 })

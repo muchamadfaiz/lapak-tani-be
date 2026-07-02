@@ -95,6 +95,9 @@ model Customer {
   // Loyalty: saldo poin berjalan (1 poin / Rp1.000, earn saat order completed).
   points    Int      @default(0)
 
+  // PIN 6 angka (bcrypt hash) untuk login cepat tanpa WA. null = belum set PIN.
+  pinHash   String?
+
   orders            Order[]
   pointTransactions PointTransaction[]
 

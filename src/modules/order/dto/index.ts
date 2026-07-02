@@ -6,5 +6,6 @@ export {
   OrderItemResponseDto,
 } from './order-response.dto';
 export { CustomerLookupDto, PointHistoryDto } from './customer-lookup.dto';
+export { SetPinDto, VerifyPinDto } from './pin.dto';
 export { FindTopSellersQueryDto } from './find-top-sellers-query.dto';
 export { TopSellerResponseDto } from './top-seller-response.dto';

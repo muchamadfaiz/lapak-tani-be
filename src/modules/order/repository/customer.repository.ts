@@ -28,6 +28,18 @@ export class CustomerRepository {
   }
 
   /**
+   * Set/replace PIN (bcrypt hash) untuk customer by HP. Customer dibuat bila
+   * belum ada (mis. daftar via WA sebelum pernah order).
+   */
+  setPinHash(phone: string, pinHash: string): Promise<Customer> {
+    return this.prisma.customer.upsert({
+      where: { phone },
+      update: { pinHash },
+      create: { phone, pinHash },
+    });
+  }
+
+  /**
    * Tambah poin untuk satu order (idempotent: 1 earn per orderId).
    * Atomik: increment saldo + catat di buku besar.
    */

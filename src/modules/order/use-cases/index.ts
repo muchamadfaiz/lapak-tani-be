@@ -4,3 +4,5 @@ export * from './find-order-by-id.use-case';
 export * from './update-order-status.use-case';
 export * from './lookup-customer.use-case';
 export * from './find-top-sellers.use-case';
+export * from './set-pin.use-case';
+export * from './verify-pin.use-case';

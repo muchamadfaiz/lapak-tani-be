@@ -33,6 +33,15 @@ export class WaLoginController {
   }
 
   @Public()
+  @Get('webhook')
+  @ApiOperation({ summary: 'Ping validasi webhook (Fonnte GET saat simpan URL)' })
+  webhookPing() {
+    // Fonnte melakukan GET untuk memvalidasi URL webhook saat disimpan.
+    // Cukup balas 200 agar URL diterima; pesan masuk sebenarnya lewat POST.
+    return { ok: true };
+  }
+
+  @Public()
   @Post('webhook')
   @ApiOperation({ summary: 'Webhook pesan masuk WhatsApp (dipanggil Fonnte)' })
   webhook(

@@ -44,7 +44,10 @@ export class WaLoginService {
     const expiresAt = new Date(Date.now() + this.cfg.ttlSec * 1000);
     await this.repo.create({ code, expiresAt });
 
-    const text = `Verifikasi WhatsApp LapakTani: ${code} (jangan diubah)`;
+    const text =
+      `Halo Lapak Tani! Saya mau masuk/daftar aplikasi dengan nomor WhatsApp ini.\n` +
+      `Kode saya: ${code}\n\n` +
+      `(Jangan ubah kode ini & jangan bagikan ke siapa pun.)`;
     const waUrl = `https://wa.me/${businessNumber}?text=${encodeURIComponent(text)}`;
     return { code, waNumber: businessNumber, waUrl, expiresInSec: this.cfg.ttlSec };
   }

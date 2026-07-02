@@ -56,6 +56,7 @@ export class LookupCustomerUseCase {
       phone: customer.phone,
       name: customer.name,
       points: customer.points,
+      hasPin: !!customer.pinHash,
       orders: OrderMapper.toResponseDtoList(orders),
       pointHistory: history.map((h) => ({
         type: h.type,

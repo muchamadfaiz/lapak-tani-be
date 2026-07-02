@@ -31,6 +31,9 @@ export class CustomerLookupDto {
   @ApiProperty({ example: 125, description: 'Saldo poin' })
   points: number;
 
+  @ApiProperty({ example: true, description: 'Sudah set PIN login cepat?' })
+  hasPin: boolean;
+
   @ApiProperty({ type: [OrderResponseDto] })
   orders: OrderResponseDto[];
 
