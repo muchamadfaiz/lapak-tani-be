@@ -359,3 +359,17 @@ model OtpCode {
   @@index([phone, purpose])
   @@map("otp_codes")
 }
+
+// "Login instan WhatsApp" (reverse-OTP): app buat sesi berkode, user kirim kode
+// itu ke nomor WA bisnis, webhook Fonnte mengisi `phone` dari nomor pengirim.
+model WaLoginSession {
+  id        String   @id @default(uuid())
+  code      String   @unique // nonce yang dikirim user via WA (single-use, singkat)
+  phone     String? // diisi dari nomor pengirim saat pesan masuk
+  status    String   @default("pending") // pending | verified
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@map("wa_login_sessions")
+}

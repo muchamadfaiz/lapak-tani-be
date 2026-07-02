@@ -38,6 +38,52 @@ export class PaymentService {
     });
   }
 
+  /**
+   * Status pembayaran untuk polling app (PAID | PENDING | CANCELLED).
+   * Cek LANGSUNG ke Midtrans lalu sinkronkan status order (self-heal) — jadi
+   * tak bergantung pada webhook. Aman dipanggil berulang (idempotent).
+   */
+  async getPaymentStatus(orderId: string): Promise<{ status: string }> {
+    const order = await this.orderContract.getDetailById(orderId);
+    if (!order) {
+      throw new NotFoundException('Order tidak ditemukan');
+    }
+
+    const fromOrder = (s: string): string =>
+      ['confirmed', 'processing', 'shipped', 'completed'].includes(s)
+        ? 'PAID'
+        : s === 'cancelled'
+          ? 'CANCELLED'
+          : 'PENDING';
+
+    if (!this.midtrans.enabled) {
+      return { status: fromOrder(order.status) };
+    }
+
+    try {
+      const { orderNumber, status } = await this.midtrans.readNotification({
+        order_id: order.orderNumber,
+      });
+      // Sinkronkan order (tak menunggu webhook). Idempotent & aman diulang.
+      try {
+        await this.orderContract.setStatusByNumber(orderNumber, status);
+      } catch (e) {
+        this.logger.warn(`Sync status ${orderNumber}: ${(e as Error).message}`);
+      }
+      return {
+        status:
+          status === 'confirmed'
+            ? 'PAID'
+            : status === 'cancelled'
+              ? 'CANCELLED'
+              : 'PENDING',
+      };
+    } catch {
+      // Belum ada transaksi di Midtrans (belum bayar) → pakai status order.
+      return { status: fromOrder(order.status) };
+    }
+  }
+
   /** Tangani webhook Midtrans → update status order. */
   async handleNotification(body: unknown): Promise<{ ok: boolean }> {
     let parsed: { orderNumber: string; status: string };
