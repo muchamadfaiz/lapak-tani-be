@@ -66,13 +66,21 @@ export class StockRepository {
     });
   }
 
-  findProcurements(outletId?: string): Promise<ProcurementWithItems[]> {
-    return this.prisma.stockProcurement.findMany({
-      where: outletId ? { outletId } : undefined,
-      include: { items: true },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    });
+  findProcurementsAndCount(
+    outletId: string | undefined,
+    opts: { skip: number; take: number },
+  ): Promise<[ProcurementWithItems[], number]> {
+    const where = outletId ? { outletId } : undefined;
+    return this.prisma.$transaction([
+      this.prisma.stockProcurement.findMany({
+        where,
+        include: { items: true },
+        orderBy: { createdAt: 'desc' },
+        skip: opts.skip,
+        take: opts.take,
+      }),
+      this.prisma.stockProcurement.count({ where }),
+    ]);
   }
 
   // ── Kiriman ──
@@ -103,18 +111,25 @@ export class StockRepository {
     });
   }
 
-  findShipments(filter: ShipmentFilter): Promise<ShipmentWithItems[]> {
+  findShipmentsAndCount(
+    filter: ShipmentFilter,
+    opts: { skip: number; take: number },
+  ): Promise<[ShipmentWithItems[], number]> {
     const where: Prisma.StockShipmentWhereInput = {
       ...(filter.toOutletId && { toOutletId: filter.toOutletId }),
       ...(filter.fromOutletId && { fromOutletId: filter.fromOutletId }),
       ...(filter.status && { status: filter.status }),
     };
-    return this.prisma.stockShipment.findMany({
-      where,
-      include: { items: true },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    });
+    return this.prisma.$transaction([
+      this.prisma.stockShipment.findMany({
+        where,
+        include: { items: true },
+        orderBy: { createdAt: 'desc' },
+        skip: opts.skip,
+        take: opts.take,
+      }),
+      this.prisma.stockShipment.count({ where }),
+    ]);
   }
 
   setShipmentStatus(
@@ -148,7 +163,10 @@ export class StockRepository {
     await this.prisma.stockMovement.createMany({ data: rows });
   }
 
-  findMovements(filter: MovementFilter): Promise<StockMovement[]> {
+  findMovementsAndCount(
+    filter: MovementFilter,
+    opts: { skip: number; take: number },
+  ): Promise<[StockMovement[], number]> {
     const where: Prisma.StockMovementWhereInput = {
       ...(filter.outletId && { outletId: filter.outletId }),
       ...(filter.productId && { productId: filter.productId }),
@@ -159,10 +177,14 @@ export class StockRepository {
         },
       }),
     };
-    return this.prisma.stockMovement.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: 300,
-    });
+    return this.prisma.$transaction([
+      this.prisma.stockMovement.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: opts.skip,
+        take: opts.take,
+      }),
+      this.prisma.stockMovement.count({ where }),
+    ]);
   }
 }

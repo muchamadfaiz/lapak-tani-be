@@ -5,6 +5,7 @@ import {
   CreateProcurementDto,
   CreateShipmentDto,
   FindMovementsQueryDto,
+  FindProcurementsQueryDto,
   FindShipmentsQueryDto,
 } from './dto';
 import { StockService } from './stock.service';
@@ -25,10 +26,10 @@ export class StockController {
 
   @Roles('ADMIN')
   @Get('procurements')
-  @ApiOperation({ summary: 'Riwayat pengadaan (supplier & harga modal)' })
+  @ApiOperation({ summary: 'Riwayat pengadaan (supplier & harga modal) — terpaginasi' })
   @ResponseMessage('Success get procurements')
-  findProcurements(@Query('outletId') outletId?: string) {
-    return this.svc.findProcurements(outletId);
+  findProcurements(@Query() query: FindProcurementsQueryDto) {
+    return this.svc.findProcurements(query);
   }
 
   @Roles('ADMIN')

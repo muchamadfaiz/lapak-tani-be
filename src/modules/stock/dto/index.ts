@@ -14,6 +14,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { PageOptionsDto } from '../../../common';
 
 export class StockItemDto {
   @ApiProperty({ description: 'ID produk' })
@@ -92,7 +93,8 @@ export class CreateShipmentDto {
   note?: string;
 }
 
-export class FindShipmentsQueryDto {
+/** Paginasi (page/limit dari PageOptionsDto) + filter. */
+export class FindShipmentsQueryDto extends PageOptionsDto {
   @ApiPropertyOptional({ description: 'Kiriman menuju outlet ini (dipakai kasir)' })
   @IsOptional()
   @IsUUID()
@@ -109,7 +111,18 @@ export class FindShipmentsQueryDto {
   status?: string;
 }
 
-export class FindMovementsQueryDto {
+export class FindProcurementsQueryDto extends PageOptionsDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  outletId?: string;
+}
+
+/**
+ * Riwayat stok tumbuh cepat (tiap item terjual = 1 baris), jadi WAJIB
+ * terpaginasi + bisa difilter per outlet/produk/tanggal.
+ */
+export class FindMovementsQueryDto extends PageOptionsDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()

@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { StockMovement } from '@prisma/client';
+import { PageMetaDto } from '../../common';
 import { OutletContract } from '../outlet';
 import { ProductContract } from '../product';
 import {
@@ -16,6 +16,7 @@ import {
   CreateProcurementDto,
   CreateShipmentDto,
   FindMovementsQueryDto,
+  FindProcurementsQueryDto,
   FindShipmentsQueryDto,
   StockItemDto,
 } from './dto';
@@ -92,8 +93,19 @@ export class StockService extends StockContract {
     return procurement;
   }
 
-  findProcurements(outletId?: string): Promise<ProcurementWithItems[]> {
-    return this.repo.findProcurements(outletId);
+  async findProcurements(query: FindProcurementsQueryDto) {
+    const [data, totalData] = await this.repo.findProcurementsAndCount(
+      query.outletId,
+      { skip: query.skip, take: query.limit },
+    );
+    return {
+      data,
+      meta: new PageMetaDto({
+        page: query.page,
+        limit: query.limit,
+        totalData,
+      }),
+    };
   }
 
   // ── StockContract: pencatatan penjualan (dipanggil modul Order) ──
@@ -243,8 +255,23 @@ export class StockService extends StockContract {
     return this.repo.setShipmentStatus(id, 'cancelled');
   }
 
-  findShipments(query: FindShipmentsQueryDto): Promise<ShipmentWithItems[]> {
-    return this.repo.findShipments(query);
+  async findShipments(query: FindShipmentsQueryDto) {
+    const [data, totalData] = await this.repo.findShipmentsAndCount(
+      {
+        toOutletId: query.toOutletId,
+        fromOutletId: query.fromOutletId,
+        status: query.status,
+      },
+      { skip: query.skip, take: query.limit },
+    );
+    return {
+      data,
+      meta: new PageMetaDto({
+        page: query.page,
+        limit: query.limit,
+        totalData,
+      }),
+    };
   }
 
   async findShipmentById(id: string): Promise<ShipmentWithItems> {
@@ -253,16 +280,27 @@ export class StockService extends StockContract {
     return s;
   }
 
-  findMovements(query: FindMovementsQueryDto): Promise<StockMovement[]> {
-    return this.repo.findMovements({
-      outletId: query.outletId,
-      productId: query.productId,
-      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-      // dateTo inklusif sampai akhir hari.
-      dateTo: query.dateTo
-        ? new Date(`${query.dateTo}T23:59:59.999Z`)
-        : undefined,
-    });
+  async findMovements(query: FindMovementsQueryDto) {
+    const [data, totalData] = await this.repo.findMovementsAndCount(
+      {
+        outletId: query.outletId,
+        productId: query.productId,
+        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+        // dateTo inklusif sampai akhir hari.
+        dateTo: query.dateTo
+          ? new Date(`${query.dateTo}T23:59:59.999Z`)
+          : undefined,
+      },
+      { skip: query.skip, take: query.limit },
+    );
+    return {
+      data,
+      meta: new PageMetaDto({
+        page: query.page,
+        limit: query.limit,
+        totalData,
+      }),
+    };
   }
 
   /** Validasi produk ada + ambil snapshot nama (untuk riwayat yang terbaca). */
