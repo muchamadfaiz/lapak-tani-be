@@ -11,14 +11,14 @@ export interface OrderDetailRef {
 
 /**
  * Batas publik modul Order. Dipakai modul Payment untuk membaca order &
- * memperbarui statusnya saat ada notifikasi pembayaran (webhook Midtrans).
+ * memperbarui statusnya saat ada notifikasi pembayaran (webhook Xendit).
  */
 export abstract class OrderContract {
   /** Detail order by id (untuk membuat transaksi pembayaran). */
   abstract getDetailById(orderId: string): Promise<OrderDetailRef | null>;
 
   /**
-   * Ubah status order berdasarkan orderNumber (Midtrans memakai orderNumber
+   * Ubah status order berdasarkan orderNumber (Xendit memakai orderNumber
    * sebagai order_id). Mengembalikan stok bila status menjadi `cancelled`.
    */
   abstract setStatusByNumber(

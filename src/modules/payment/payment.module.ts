@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import paymentConfig from '../../config/payment.config';
+import xenditConfig from '../../config/xendit.config';
 import { OrderModule } from '../order';
 import { SettingModule } from '../setting';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
-import { MidtransService } from './midtrans.service';
+import { XenditService } from './xendit.service';
 
 @Module({
-  imports: [ConfigModule.forFeature(paymentConfig), OrderModule, SettingModule],
+  imports: [ConfigModule.forFeature(xenditConfig), OrderModule, SettingModule],
   controllers: [PaymentController],
-  providers: [MidtransService, PaymentService],
+  providers: [XenditService, PaymentService],
 })
 export class PaymentModule {}

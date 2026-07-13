@@ -4,7 +4,7 @@ import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 export class UpdateSettingsDto {
   @ApiPropertyOptional({
     example: true,
-    description: 'Aktifkan pembayaran online (Midtrans). false = hanya transfer/cash.',
+    description: 'Aktifkan pembayaran online (Xendit). false = hanya transfer/cash.',
   })
   @IsOptional()
   @IsBoolean()

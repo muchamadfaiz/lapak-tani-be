@@ -8,7 +8,7 @@ export const SETTING_KEYS = {
 
 /** Pengaturan pembayaran yang boleh dilihat publik (storefront & app). */
 export interface PublicPaymentSettings {
-  /** Bila false, opsi bayar online (Midtrans) disembunyikan & ditolak BE. */
+  /** Bila false, opsi bayar online (Xendit) disembunyikan & ditolak BE. */
   onlinePaymentEnabled: boolean;
   bankName: string;
   bankAccountNumber: string;

@@ -113,7 +113,7 @@ export class OrderRepository {
   ): Promise<OrderWithRelations> {
     return this.prisma.order.update({
       where: { id },
-      // paymentMethod diisi channel asli dari Midtrans (mis. "BCA VA") saat bayar.
+      // paymentMethod diisi channel asli dari gateway (mis. "BCA VA") saat bayar.
       data: { status, ...(paymentMethod && { paymentMethod }) },
       include: ORDER_INCLUDE,
     });

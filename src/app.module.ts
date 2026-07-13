@@ -9,7 +9,7 @@ import {
   jwtConfig,
   storageConfig,
   emailConfig,
-  paymentConfig,
+  xenditConfig,
   otpConfig,
   validate,
 } from './config';
@@ -37,7 +37,7 @@ import { RolesGuard } from './common';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
-      load: [appConfig, databaseConfig, jwtConfig, storageConfig, emailConfig, paymentConfig, otpConfig],
+      load: [appConfig, databaseConfig, jwtConfig, storageConfig, emailConfig, xenditConfig, otpConfig],
       validate,
     }),
     // Rate limiting global: default 120 request / menit per IP (anti spam & DoS).
