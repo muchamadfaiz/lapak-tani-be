@@ -6,9 +6,15 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -25,6 +31,7 @@ import {
   FindAllOrdersUseCase,
   FindOrderByIdUseCase,
   UpdateOrderStatusUseCase,
+  UploadPaymentProofUseCase,
 } from './use-cases';
 
 @ApiTags('Orders')
@@ -35,7 +42,30 @@ export class OrderController {
     private readonly findAllOrdersUseCase: FindAllOrdersUseCase,
     private readonly findOrderByIdUseCase: FindOrderByIdUseCase,
     private readonly updateOrderStatusUseCase: UpdateOrderStatusUseCase,
+    private readonly uploadPaymentProofUseCase: UploadPaymentProofUseCase,
   ) {}
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post(':id/payment-proof')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+      required: ['file'],
+    },
+  })
+  @ApiOperation({ summary: 'Unggah bukti transfer untuk order (pelanggan)' })
+  @ApiParam({ name: 'id', description: 'Order UUID' })
+  @ResponseMessage('Success upload payment proof')
+  uploadPaymentProof(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.uploadPaymentProofUseCase.execute(id, file);
+  }
 
   @Public()
   @Post()

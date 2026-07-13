@@ -4,6 +4,7 @@ import { ProductModule } from '../product';
 import { NotificationModule } from '../notification';
 import { OtpModule } from '../otp';
 import { DistanceModule } from '../distance';
+import { FileModule } from '../file';
 import { OrderController } from './order.controller';
 import { CustomerController } from './customer.controller';
 import { TopSellerController } from './top-seller.controller';
@@ -21,12 +22,21 @@ import {
   FindTopSellersUseCase,
   SetPinUseCase,
   VerifyPinUseCase,
+  UploadPaymentProofUseCase,
 } from './use-cases';
 
 @Module({
   // Pakai OutletContract & ProductContract untuk validasi + data snapshot,
   // NotificationContract untuk memberi tahu admin saat ada pesanan baru.
-  imports: [OutletModule, ProductModule, NotificationModule, OtpModule, DistanceModule],
+  // FileModule → FileContract (URL unggahan) + MulterModule (FileInterceptor).
+  imports: [
+    OutletModule,
+    ProductModule,
+    NotificationModule,
+    OtpModule,
+    DistanceModule,
+    FileModule,
+  ],
   controllers: [OrderController, CustomerController, TopSellerController],
   providers: [
     OrderRepository,
@@ -42,6 +52,7 @@ import {
     FindTopSellersUseCase,
     SetPinUseCase,
     VerifyPinUseCase,
+    UploadPaymentProofUseCase,
   ],
   exports: [OrderContract],
 })

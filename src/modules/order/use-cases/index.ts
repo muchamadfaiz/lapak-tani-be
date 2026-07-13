@@ -6,3 +6,4 @@ export * from './lookup-customer.use-case';
 export * from './find-top-sellers.use-case';
 export * from './set-pin.use-case';
 export * from './verify-pin.use-case';
+export * from './upload-payment-proof.use-case';

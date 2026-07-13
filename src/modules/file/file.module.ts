@@ -70,7 +70,8 @@ const ALLOWED_MIMETYPES = [
     UploadFileUseCase,
     DeleteFileUseCase,
   ],
-  // Hanya kontrak publik yang diekspos ke modul lain.
-  exports: [FileContract],
+  // Kontrak publik + MulterModule (agar modul lain bisa memakai FileInterceptor
+  // dengan konfigurasi penyimpanan/filter yang sama, tanpa menduplikasinya).
+  exports: [FileContract, MulterModule],
 })
 export class FileModule {}

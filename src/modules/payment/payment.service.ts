@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { OrderContract } from '../order';
+import { SettingContract } from '../setting';
 import { MidtransService, PaymentStatus, SnapResult } from './midtrans.service';
 
 @Injectable()
@@ -14,12 +15,17 @@ export class PaymentService {
   constructor(
     private readonly midtrans: MidtransService,
     private readonly orderContract: OrderContract,
+    private readonly settingContract: SettingContract,
   ) {}
 
   /** Buat transaksi Snap untuk sebuah order (status harus pending). */
   async createSnap(orderId: string): Promise<SnapResult> {
+    // Dua gerbang: kredensial/env (midtrans.enabled) DAN toggle admin (setting).
     if (!this.midtrans.enabled) {
       throw new BadRequestException('Pembayaran online belum diaktifkan');
+    }
+    if (!(await this.settingContract.isOnlinePaymentEnabled())) {
+      throw new BadRequestException('Pembayaran online sedang dinonaktifkan');
     }
     const order = await this.orderContract.getDetailById(orderId);
     if (!order) {

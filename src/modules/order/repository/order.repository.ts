@@ -89,6 +89,15 @@ export class OrderRepository {
     });
   }
 
+  /** Simpan URL bukti transfer yang diunggah pelanggan. */
+  setPaymentProof(id: string, url: string): Promise<OrderWithRelations> {
+    return this.prisma.order.update({
+      where: { id },
+      data: { paymentProofUrl: url, paymentProofAt: new Date() },
+      include: ORDER_INCLUDE,
+    });
+  }
+
   findByCustomerId(customerId: string): Promise<OrderWithRelations[]> {
     return this.prisma.order.findMany({
       where: { customerId },

@@ -24,4 +24,11 @@ export abstract class FileContract {
   /** Lempar NotFoundException bila file tidak ada. Berguna saat modul lain
    *  ingin memvalidasi fileId yang dikirim client (mis. foto produk). */
   abstract assertExists(id: string): Promise<void>;
+
+  /**
+   * URL publik untuk file yang SUDAH ditulis multer ke disk. Dipakai modul lain
+   * yang menerima unggahan tanpa akun (mis. bukti transfer dari pelanggan tamu),
+   * sehingga tak perlu membuat record File milik user.
+   */
+  abstract buildUploadUrl(file: Express.Multer.File): string;
 }

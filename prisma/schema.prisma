@@ -144,9 +144,13 @@ model Order {
   shippingCost  Int
   total         Int
 
-  paymentMethod   String // transfer_bca, cod, qris, dll (manual)
+  paymentMethod   String // transfer, cod/cash, qris/online, dll
   shippingAddress String  @db.Text
   notes           String? @db.Text
+
+  // Bukti transfer manual yang diunggah pelanggan (URL gambar). Diverifikasi admin.
+  paymentProofUrl String?
+  paymentProofAt  DateTime?
 
   // Koordinat tujuan (opsional) untuk kalkulasi ongkir
   latitude    Float?
@@ -378,4 +382,14 @@ model WaLoginSession {
 
   @@index([status])
   @@map("wa_login_sessions")
+}
+
+// Pengaturan aplikasi (key-value) yang bisa diubah admin tanpa deploy.
+// Contoh: online_payment_enabled, bank_name, bank_account_number, bank_account_name.
+model Setting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
 }

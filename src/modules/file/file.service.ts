@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { File } from '@prisma/client';
 import { FileRepository } from './repository/file.repository';
+import { StorageContract } from './storage/storage.contract';
 import { FileContract, FileRef } from './file.contract';
 
 /**
@@ -10,8 +11,17 @@ import { FileContract, FileRef } from './file.contract';
  */
 @Injectable()
 export class FileService extends FileContract {
-  constructor(private readonly fileRepository: FileRepository) {
+  constructor(
+    private readonly fileRepository: FileRepository,
+    private readonly storage: StorageContract,
+  ) {
     super();
+  }
+
+  /** File sudah ditulis multer ke disk; ini hanya menyusun URL publiknya. */
+  buildUploadUrl(file: Express.Multer.File): string {
+    const dateDir = new Date().toISOString().split('T')[0];
+    return this.storage.buildUrl(file.filename, dateDir);
   }
 
   async getFileById(id: string): Promise<FileRef | null> {

@@ -54,6 +54,9 @@ export class OrderResponseDto {
   @ApiProperty({ example: 'instant', description: 'instant | scheduled_morning | scheduled_afternoon' })
   deliveryOption: string;
 
+  @ApiProperty({ nullable: true, description: 'URL bukti transfer (bila diunggah pelanggan)' })
+  paymentProofUrl: string | null;
+
   @ApiProperty()
   shippingAddress: string;
 
