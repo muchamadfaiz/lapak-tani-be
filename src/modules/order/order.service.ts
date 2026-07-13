@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductContract } from '../product';
+import { StockContract } from '../stock';
 import {
   OrderRepository,
   OrderWithRelations,
@@ -18,6 +19,7 @@ export class OrderService extends OrderContract {
     private readonly orderRepository: OrderRepository,
     private readonly productContract: ProductContract,
     private readonly customerRepository: CustomerRepository,
+    private readonly stockContract: StockContract,
   ) {
     super();
   }
@@ -56,12 +58,16 @@ export class OrderService extends OrderContract {
     }
     // Restock saat order dibatalkan (dari status non-cancelled).
     if (status === 'cancelled' && existing.status !== 'cancelled') {
-      await this.productContract.restoreStock(
+      const lines = existing.items.map((i) => ({
+        productId: i.productId,
+        quantity: i.quantity,
+      }));
+      await this.productContract.restoreStock(existing.outletId, lines);
+      // Catat pengembalian stok ke buku besar agar riwayat tetap cocok.
+      await this.stockContract.recordSaleCancel(
         existing.outletId,
-        existing.items.map((i) => ({
-          productId: i.productId,
-          quantity: i.quantity,
-        })),
+        lines,
+        existing.id,
       );
     }
     await this.orderRepository.updateStatus(existing.id, status, paymentMethod);

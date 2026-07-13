@@ -7,9 +7,11 @@ import { StockMovement } from '@prisma/client';
 import { OutletContract } from '../outlet';
 import { ProductContract } from '../product';
 import {
+  ProcurementWithItems,
   ShipmentWithItems,
   StockRepository,
 } from './repository/stock.repository';
+import { StockContract, StockLine } from './stock.contract';
 import {
   CreateProcurementDto,
   CreateShipmentDto,
@@ -18,12 +20,12 @@ import {
   StockItemDto,
 } from './dto';
 
-/** LT-SHP-20260713-1234 */
-function generateShipmentNumber(): string {
+/** LT-SHP-20260713-1234 / LT-PRC-20260713-1234 */
+function generateNumber(prefix: string): string {
   const d = new Date();
   const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   const rand = Math.floor(1000 + Math.random() * 9000);
-  return `LT-SHP-${ymd}-${rand}`;
+  return `LT-${prefix}-${ymd}-${rand}`;
 }
 
 /**
@@ -34,19 +36,43 @@ function generateShipmentNumber(): string {
  * (pemilik product_outlets), agar tak ada dua sumber kebenaran stok.
  */
 @Injectable()
-export class StockService {
+export class StockService extends StockContract {
   constructor(
     private readonly repo: StockRepository,
     private readonly outletContract: OutletContract,
     private readonly productContract: ProductContract,
-  ) {}
+  ) {
+    super();
+  }
 
-  /** Barang masuk (pengadaan) → stok gudang/outlet naik + catat buku besar. */
-  async createProcurement(dto: CreateProcurementDto) {
+  /**
+   * Barang masuk (pengadaan) → simpan nota (supplier + harga modal), stok
+   * gudang/outlet naik, lalu catat buku besar.
+   */
+  async createProcurement(dto: CreateProcurementDto): Promise<ProcurementWithItems> {
     const outlet = await this.outletContract.findById(dto.outletId);
     if (!outlet) throw new NotFoundException('Outlet/gudang tidak ditemukan');
 
-    const items = await this.resolveItems(dto.items);
+    const resolved = await this.resolveItems(dto.items);
+    const items = resolved.map((r, idx) => {
+      const unitCost = dto.items[idx].unitCost;
+      return {
+        ...r,
+        unitCost,
+        subtotalCost: unitCost ? unitCost * r.quantity : 0,
+      };
+    });
+    const totalCost = items.reduce((s, i) => s + i.subtotalCost, 0);
+
+    const procurement = await this.repo.createProcurement({
+      procurementNumber: generateNumber('PRC'),
+      outletId: dto.outletId,
+      supplier: dto.supplier,
+      invoiceNumber: dto.invoiceNumber,
+      note: dto.note,
+      totalCost,
+      items,
+    });
 
     await this.productContract.increaseStock(
       dto.outletId,
@@ -59,10 +85,54 @@ export class StockService {
         type: 'purchase_in',
         quantity: i.quantity, // positif = masuk
         refType: 'procurement',
-        note: dto.note,
+        refId: procurement.id,
+        note: dto.supplier ? `Supplier: ${dto.supplier}` : dto.note,
       })),
     );
-    return { ok: true, outletId: dto.outletId, items };
+    return procurement;
+  }
+
+  findProcurements(outletId?: string): Promise<ProcurementWithItems[]> {
+    return this.repo.findProcurements(outletId);
+  }
+
+  // ── StockContract: pencatatan penjualan (dipanggil modul Order) ──
+
+  /** Order dibuat → stok outlet turun. Catat agar buku besar cocok dgn stok. */
+  async recordSale(
+    outletId: string,
+    items: StockLine[],
+    orderId: string,
+  ): Promise<void> {
+    await this.repo.recordMovements(
+      items.map((i) => ({
+        productId: i.productId,
+        outletId,
+        type: 'sale',
+        quantity: -i.quantity, // negatif = keluar (terjual)
+        refType: 'order',
+        refId: orderId,
+      })),
+    );
+  }
+
+  /** Order dibatalkan → stok dikembalikan. */
+  async recordSaleCancel(
+    outletId: string,
+    items: StockLine[],
+    orderId: string,
+  ): Promise<void> {
+    await this.repo.recordMovements(
+      items.map((i) => ({
+        productId: i.productId,
+        outletId,
+        type: 'sale_cancel',
+        quantity: i.quantity,
+        refType: 'order',
+        refId: orderId,
+        note: 'Order dibatalkan — stok dikembalikan',
+      })),
+    );
   }
 
   /**
@@ -90,7 +160,7 @@ export class StockService {
     );
 
     const shipment = await this.repo.createShipment({
-      shipmentNumber: generateShipmentNumber(),
+      shipmentNumber: generateNumber('SHP'),
       fromOutletId: dto.fromOutletId,
       toOutletId: dto.toOutletId,
       note: dto.note,

@@ -6,6 +6,7 @@ import {
 import { DistanceContract } from '../../distance';
 import { OutletContract } from '../../outlet';
 import { ProductContract, ProductRef } from '../../product';
+import { StockContract } from '../../stock';
 import { NotificationContract } from '../../notification';
 import { OrderRepository } from '../repository/order.repository';
 import { CustomerRepository } from '../repository/customer.repository';
@@ -30,6 +31,7 @@ export class CreateOrderUseCase {
     private readonly productContract: ProductContract,
     private readonly notificationContract: NotificationContract,
     private readonly distanceContract: DistanceContract,
+    private readonly stockContract: StockContract,
   ) {}
 
   async execute(dto: CreateOrderDto): Promise<OrderResponseDto> {
@@ -129,6 +131,14 @@ export class CreateOrderUseCase {
       expiresAt: new Date(Date.now() + expireHours * 60 * 60 * 1000),
       items,
     });
+
+    // 8. Catat penjualan ke buku besar stok, supaya riwayat stok cocok dengan
+    // stok sebenarnya (stok fisik sudah dikurangi di langkah 6).
+    await this.stockContract.recordSale(
+      dto.outletId,
+      items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      order.id,
+    );
 
     // Beri tahu admin (best-effort, jangan gagalkan order bila notif error).
     try {

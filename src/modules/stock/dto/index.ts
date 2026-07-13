@@ -9,6 +9,8 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -24,18 +26,42 @@ export class StockItemDto {
   quantity: number;
 }
 
+export class ProcurementItemDto extends StockItemDto {
+  @ApiPropertyOptional({
+    example: 12000,
+    description: 'Harga modal per satuan (Rupiah). Opsional — untuk hitung margin.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1_000_000_000)
+  unitCost?: number;
+}
+
 /** Barang masuk gudang (pengadaan Lapak Tani sendiri). */
 export class CreateProcurementDto {
   @ApiProperty({ description: 'Outlet/gudang tujuan barang masuk' })
   @IsUUID()
   outletId: string;
 
-  @ApiProperty({ type: [StockItemDto] })
+  @ApiProperty({ type: [ProcurementItemDto] })
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => StockItemDto)
-  items: StockItemDto[];
+  @Type(() => ProcurementItemDto)
+  items: ProcurementItemDto[];
+
+  @ApiPropertyOptional({ example: 'CV Tani Makmur' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  supplier?: string;
+
+  @ApiPropertyOptional({ example: 'INV-2026-0713' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  invoiceNumber?: string;
 
   @ApiPropertyOptional({ example: 'Panen 13 Juli' })
   @IsOptional()

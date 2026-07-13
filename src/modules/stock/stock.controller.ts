@@ -24,6 +24,14 @@ export class StockController {
   }
 
   @Roles('ADMIN')
+  @Get('procurements')
+  @ApiOperation({ summary: 'Riwayat pengadaan (supplier & harga modal)' })
+  @ResponseMessage('Success get procurements')
+  findProcurements(@Query('outletId') outletId?: string) {
+    return this.svc.findProcurements(outletId);
+  }
+
+  @Roles('ADMIN')
   @Post('shipments')
   @ApiOperation({ summary: 'Kirim barang gudang → outlet (stok asal langsung turun)' })
   @ResponseMessage('Success create shipment')

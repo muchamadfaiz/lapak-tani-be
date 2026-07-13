@@ -1,8 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, StockMovement, StockShipment, StockShipmentItem } from '@prisma/client';
+import {
+  Prisma,
+  StockMovement,
+  StockProcurement,
+  StockProcurementItem,
+  StockShipment,
+  StockShipmentItem,
+} from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 export type ShipmentWithItems = StockShipment & { items: StockShipmentItem[] };
+export type ProcurementWithItems = StockProcurement & {
+  items: StockProcurementItem[];
+};
 
 export interface MovementFilter {
   outletId?: string;
@@ -25,6 +35,45 @@ export interface ShipmentFilter {
 @Injectable()
 export class StockRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  // ── Pengadaan ──
+  createProcurement(data: {
+    procurementNumber: string;
+    outletId: string;
+    supplier?: string;
+    invoiceNumber?: string;
+    note?: string;
+    totalCost: number;
+    items: {
+      productId: string;
+      productName: string;
+      quantity: number;
+      unitCost?: number;
+      subtotalCost: number;
+    }[];
+  }): Promise<ProcurementWithItems> {
+    return this.prisma.stockProcurement.create({
+      data: {
+        procurementNumber: data.procurementNumber,
+        outletId: data.outletId,
+        supplier: data.supplier,
+        invoiceNumber: data.invoiceNumber,
+        note: data.note,
+        totalCost: data.totalCost,
+        items: { create: data.items },
+      },
+      include: { items: true },
+    });
+  }
+
+  findProcurements(outletId?: string): Promise<ProcurementWithItems[]> {
+    return this.prisma.stockProcurement.findMany({
+      where: outletId ? { outletId } : undefined,
+      include: { items: true },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+  }
 
   // ── Kiriman ──
   createShipment(data: {

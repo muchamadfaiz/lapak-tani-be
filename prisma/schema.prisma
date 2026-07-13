@@ -445,8 +445,52 @@ model StockShipmentItem {
   @@map("stock_shipment_items")
 }
 
+// Pengadaan: barang masuk ke gudang/outlet, lengkap dengan supplier & harga
+// modal (untuk hitung margin). Menjadi sumber referensi movement `purchase_in`.
+model StockProcurement {
+  id                String @id @default(uuid())
+  procurementNumber String @unique
+
+  // Gudang/outlet tujuan barang masuk (soft reference ke Outlet).
+  outletId      String
+
+  supplier      String?
+  invoiceNumber String?
+  note          String? @db.Text
+
+  /// Total harga modal seluruh item (Rupiah). 0 bila tidak diisi.
+  totalCost     Int     @default(0)
+
+  items         StockProcurementItem[]
+
+  createdAt     DateTime @default(now())
+
+  @@index([outletId, createdAt])
+  @@map("stock_procurements")
+}
+
+model StockProcurementItem {
+  id            String @id @default(uuid())
+
+  procurementId String
+  procurement   StockProcurement @relation(fields: [procurementId], references: [id], onDelete: Cascade)
+
+  productId     String
+  productName   String // snapshot agar riwayat tetap terbaca
+  quantity      Int
+
+  /// Harga modal per satuan (Rupiah). null = tidak dicatat.
+  unitCost      Int?
+  /// unitCost * quantity (0 bila unitCost null).
+  subtotalCost  Int  @default(0)
+
+  @@index([procurementId])
+  @@map("stock_procurement_items")
+}
+
 // Buku besar stok — sumber "riwayat" pergerakan barang (auditable).
 // quantity: positif = masuk, negatif = keluar (dilihat dari sisi outletId).
+// type: purchase_in | transfer_out | transfer_in | sale | sale_cancel | adjustment
 model StockMovement {
   id        String @id @default(uuid())
 

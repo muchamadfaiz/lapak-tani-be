@@ -5,6 +5,7 @@ import { NotificationModule } from '../notification';
 import { OtpModule } from '../otp';
 import { DistanceModule } from '../distance';
 import { FileModule } from '../file';
+import { StockModule } from '../stock';
 import { OrderController } from './order.controller';
 import { CustomerController } from './customer.controller';
 import { TopSellerController } from './top-seller.controller';
@@ -36,6 +37,8 @@ import {
     OtpModule,
     DistanceModule,
     FileModule,
+    // StockContract → catat penjualan/pembatalan ke buku besar stok.
+    StockModule,
   ],
   controllers: [OrderController, CustomerController, TopSellerController],
   providers: [
