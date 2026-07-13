@@ -156,6 +156,26 @@ export class ProductRepository {
     });
   }
 
+  /**
+   * Tambah stok pada satu outlet (barang masuk). Upsert: baris (produk, outlet)
+   * dibuat bila belum ada — penting untuk gudang/outlet yang belum punya stok.
+   */
+  async increaseStock(
+    outletId: string,
+    items: { productId: string; quantity: number }[],
+  ): Promise<void> {
+    const ordered = [...items].sort((a, b) => a.productId.localeCompare(b.productId));
+    await this.prisma.$transaction(
+      ordered.map((it) =>
+        this.prisma.productOutlet.upsert({
+          where: { productId_outletId: { productId: it.productId, outletId } },
+          update: { stock: { increment: it.quantity } },
+          create: { productId: it.productId, outletId, stock: it.quantity },
+        }),
+      ),
+    );
+  }
+
   /** Kembalikan stok pada satu outlet (increment). */
   async restoreStock(
     outletId: string,

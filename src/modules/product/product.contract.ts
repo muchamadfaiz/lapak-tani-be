@@ -44,4 +44,14 @@ export abstract class ProductContract {
     outletId: string,
     items: { productId: string; quantity: number }[],
   ): Promise<void>;
+
+  /**
+   * Tambah stok pada satu outlet/gudang (barang masuk: pengadaan / terima
+   * kiriman). Beda dari restoreStock: baris stok DIBUAT bila belum ada (upsert),
+   * sehingga gudang/outlet baru yang belum punya baris tetap bisa diisi.
+   */
+  abstract increaseStock(
+    outletId: string,
+    items: { productId: string; quantity: number }[],
+  ): Promise<void>;
 }

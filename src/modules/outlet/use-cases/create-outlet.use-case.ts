@@ -16,6 +16,7 @@ export class CreateOutletUseCase {
       phone: dto.phone,
       imageUrl: dto.imageUrl,
       isActive: dto.isActive,
+      isWarehouse: dto.isWarehouse,
     });
     return OutletMapper.toResponseDto(outlet);
   }

@@ -49,4 +49,13 @@ export class CreateOutletDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Tandai sebagai gudang (pusat pengadaan). Gudang tidak tampil di storefront & tak bisa dipesan pelanggan.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isWarehouse?: boolean;
 }

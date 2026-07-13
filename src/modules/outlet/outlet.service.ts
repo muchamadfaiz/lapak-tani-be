@@ -33,6 +33,7 @@ export class OutletService extends OutletContract {
       latitude: outlet.latitude,
       longitude: outlet.longitude,
       isActive: outlet.isActive,
+      isWarehouse: outlet.isWarehouse,
     };
   }
 }

@@ -12,7 +12,10 @@ export class FindAllOutletsUseCase {
   ) {}
 
   async execute(query: FindOutletsQueryDto): Promise<OutletResponseDto[]> {
-    const outlets = await this.outletRepository.findAll();
+    // Gudang hanya tampil bila diminta (admin) — storefront tak boleh melihatnya.
+    const outlets = await this.outletRepository.findAll(
+      query.includeWarehouse === true,
+    );
 
     // Tanpa lokasi user → urut nama, tanpa jarak.
     if (query.lat === undefined || query.lng === undefined) {

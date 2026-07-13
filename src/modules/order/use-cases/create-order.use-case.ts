@@ -41,6 +41,10 @@ export class CreateOrderUseCase {
     if (!outlet.isActive) {
       throw new BadRequestException('Outlet sedang tidak aktif');
     }
+    // Gudang hanya menyimpan stok — bukan tempat jualan.
+    if (outlet.isWarehouse) {
+      throw new BadRequestException('Tidak bisa memesan dari gudang');
+    }
 
     // 2. Ambil semua produk + stok di outlet ini sekaligus (via contract, hindari N+1)
     const ids = [...new Set(dto.items.map((i) => i.productId))];

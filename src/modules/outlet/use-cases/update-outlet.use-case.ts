@@ -21,6 +21,7 @@ export class UpdateOutletUseCase {
       ...(dto.phone !== undefined && { phone: dto.phone }),
       ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
       ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+      ...(dto.isWarehouse !== undefined && { isWarehouse: dto.isWarehouse }),
     });
     return OutletMapper.toResponseDto(outlet);
   }

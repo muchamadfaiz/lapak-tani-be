@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsBoolean, IsNumber, IsOptional, Max, Min } from 'class-validator';
 
 /**
  * Query opsional untuk GET /outlets. Bila `lat` & `lng` diisi (lokasi user),
@@ -22,4 +22,14 @@ export class FindOutletsQueryDto {
   @Min(-180)
   @Max(180)
   lng?: number;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Sertakan gudang. Default false → storefront hanya melihat outlet jualan.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  includeWarehouse?: boolean;
 }

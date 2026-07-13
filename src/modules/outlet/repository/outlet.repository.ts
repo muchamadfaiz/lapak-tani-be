@@ -19,8 +19,12 @@ export class OutletRepository {
     return this.prisma.outlet.findUnique({ where: { id } });
   }
 
-  findAll(): Promise<Outlet[]> {
-    return this.prisma.outlet.findMany({ orderBy: { name: 'asc' } });
+  /** Default: gudang DISEMBUNYIKAN (storefront). Admin kirim includeWarehouse. */
+  findAll(includeWarehouse = false): Promise<Outlet[]> {
+    return this.prisma.outlet.findMany({
+      where: includeWarehouse ? undefined : { isWarehouse: false },
+      orderBy: { name: 'asc' },
+    });
   }
 
   update(id: string, data: Prisma.OutletUpdateInput): Promise<Outlet> {

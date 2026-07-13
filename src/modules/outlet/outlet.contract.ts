@@ -9,6 +9,8 @@ export interface OutletRef {
   latitude: number;
   longitude: number;
   isActive: boolean;
+  /** Gudang: menyimpan stok, tapi TIDAK bisa dipesan pelanggan. */
+  isWarehouse: boolean;
 }
 
 /**

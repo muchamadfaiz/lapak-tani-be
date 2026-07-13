@@ -25,6 +25,9 @@ export class OutletResponseDto {
   @ApiProperty()
   isActive: boolean;
 
+  @ApiProperty({ description: 'Gudang (pusat pengadaan), bukan tempat jualan' })
+  isWarehouse: boolean;
+
   @ApiPropertyOptional({
     description: 'Jarak dari lokasi user (km). Hanya ada bila query lat & lng dikirim.',
     example: 1.8,

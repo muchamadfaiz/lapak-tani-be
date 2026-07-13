@@ -12,6 +12,7 @@ export class OutletMapper {
       phone: outlet.phone,
       imageUrl: outlet.imageUrl,
       isActive: outlet.isActive,
+      isWarehouse: outlet.isWarehouse,
       ...(distance !== undefined && { distance }),
       createdAt: outlet.createdAt,
       updatedAt: outlet.updatedAt,

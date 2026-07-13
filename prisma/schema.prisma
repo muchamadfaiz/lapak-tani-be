@@ -30,9 +30,14 @@ model Outlet {
   imageUrl  String?
   isActive  Boolean  @default(true)
 
+  // Gudang besar (pusat pengadaan). Menyimpan stok memakai tabel yang sama
+  // (product_outlets), tapi TIDAK ditampilkan di storefront & tak bisa dipesan.
+  isWarehouse Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([isWarehouse])
   @@map("outlets")
 }
 
@@ -392,4 +397,73 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// ── Manajemen stok (MVP) ──
+// Gudang = Outlet dengan isWarehouse=true, sehingga stoknya memakai tabel yang
+// sama (product_outlets). Kiriman = perpindahan stok antar-outlet (gudang→outlet).
+
+// Kiriman barang dari satu outlet/gudang ke outlet lain.
+// Alur: sent (stok asal turun) → received (stok tujuan naik). Barang "di jalan"
+// tidak dihitung di kedua sisi, sehingga tak ada stok ganda.
+model StockShipment {
+  id           String @id @default(uuid())
+  shipmentNumber String @unique
+
+  // Soft reference ke Outlet (tanpa FK lintas-modul), divalidasi via OutletContract.
+  fromOutletId String // biasanya gudang
+  toOutletId   String
+
+  status       String @default("sent") // sent | received | cancelled
+  note         String? @db.Text
+
+  sentAt       DateTime  @default(now())
+  receivedAt   DateTime?
+
+  items        StockShipmentItem[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([toOutletId, status])
+  @@index([fromOutletId])
+  @@map("stock_shipments")
+}
+
+model StockShipmentItem {
+  id         String @id @default(uuid())
+
+  shipmentId String
+  shipment   StockShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  productId  String
+  // Snapshot nama agar riwayat tetap terbaca walau produk berubah/terhapus.
+  productName String
+  quantity   Int
+
+  @@index([shipmentId])
+  @@map("stock_shipment_items")
+}
+
+// Buku besar stok — sumber "riwayat" pergerakan barang (auditable).
+// quantity: positif = masuk, negatif = keluar (dilihat dari sisi outletId).
+model StockMovement {
+  id        String @id @default(uuid())
+
+  productId String
+  outletId  String
+
+  type      String // purchase_in | transfer_out | transfer_in | adjustment
+  quantity  Int
+
+  // Referensi asal-usul (mis. shipmentId) agar bisa ditelusuri.
+  refType   String?
+  refId     String?
+  note      String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([outletId, createdAt])
+  @@index([productId, createdAt])
+  @@map("stock_movements")
 }
