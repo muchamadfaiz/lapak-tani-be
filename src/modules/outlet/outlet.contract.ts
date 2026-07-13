@@ -23,4 +23,11 @@ export abstract class OutletContract {
 
   /** Lempar NotFoundException bila outlet tidak ada. */
   abstract assertExists(id: string): Promise<void>;
+
+  /**
+   * ID semua outlet yang berstatus gudang. Dipakai modul Product untuk
+   * MENGECUALIKAN stok gudang dari "total stok" produk — stok gudang belum
+   * bisa dijual, jadi tak boleh membuat produk tampak tersedia.
+   */
+  abstract findWarehouseIds(): Promise<string[]>;
 }

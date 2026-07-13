@@ -264,6 +264,7 @@ async function main() {
     });
   }
   console.log(`Seeded ${seedOrderIdx} completed orders (demo Top Seller)`);
+
 }
 
 main()

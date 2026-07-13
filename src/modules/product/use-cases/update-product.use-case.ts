@@ -46,6 +46,9 @@ export class UpdateProductUseCase {
 
     // Ambil ulang agar stok terbaru & outletStocks terisi di response.
     const fresh = await this.productRepository.findById(id);
-    return ProductMapper.toAdminResponseDto(fresh!);
+    return ProductMapper.toAdminResponseDto(
+      fresh!,
+      await this.outletContract.findWarehouseIds(),
+    );
   }
 }

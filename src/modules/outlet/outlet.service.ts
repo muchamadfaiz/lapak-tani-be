@@ -25,6 +25,10 @@ export class OutletService extends OutletContract {
     }
   }
 
+  findWarehouseIds(): Promise<string[]> {
+    return this.outletRepository.findWarehouseIds();
+  }
+
   private static toRef(outlet: Outlet): OutletRef {
     return {
       id: outlet.id,

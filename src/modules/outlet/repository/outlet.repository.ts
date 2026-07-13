@@ -19,6 +19,14 @@ export class OutletRepository {
     return this.prisma.outlet.findUnique({ where: { id } });
   }
 
+  async findWarehouseIds(): Promise<string[]> {
+    const rows = await this.prisma.outlet.findMany({
+      where: { isWarehouse: true },
+      select: { id: true },
+    });
+    return rows.map((r) => r.id);
+  }
+
   /** Default: gudang DISEMBUNYIKAN (storefront). Admin kirim includeWarehouse. */
   findAll(includeWarehouse = false): Promise<Outlet[]> {
     return this.prisma.outlet.findMany({
