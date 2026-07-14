@@ -19,6 +19,16 @@ export class OutletRepository {
     return this.prisma.outlet.findUnique({ where: { id } });
   }
 
+  /** Jumlah outlet jualan (bukan gudang), boleh mengecualikan satu id. */
+  countSellingOutlets(excludeId?: string): Promise<number> {
+    return this.prisma.outlet.count({
+      where: {
+        isWarehouse: false,
+        ...(excludeId && { id: { not: excludeId } }),
+      },
+    });
+  }
+
   async findWarehouseIds(): Promise<string[]> {
     const rows = await this.prisma.outlet.findMany({
       where: { isWarehouse: true },

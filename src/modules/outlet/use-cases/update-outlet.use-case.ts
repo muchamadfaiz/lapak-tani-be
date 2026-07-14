@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { OutletRepository } from '../repository/outlet.repository';
 import { UpdateOutletDto, OutletResponseDto } from '../dto';
 import { OutletMapper } from '../mapper/outlet.mapper';
@@ -11,6 +15,18 @@ export class UpdateOutletUseCase {
     const existing = await this.outletRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Outlet not found');
+    }
+
+    // PENGAMAN: gudang disembunyikan dari storefront. Kalau SEMUA outlet dijadikan
+    // gudang, pelanggan tidak melihat outlet mana pun → toko mati total tanpa
+    // pesan error apa pun. Jadi outlet jualan terakhir tidak boleh dikonversi.
+    if (dto.isWarehouse === true && !existing.isWarehouse) {
+      const sellingLeft = await this.outletRepository.countSellingOutlets(id);
+      if (sellingLeft === 0) {
+        throw new BadRequestException(
+          'Minimal harus ada satu outlet jualan. Outlet ini tidak bisa dijadikan gudang karena akan membuat aplikasi pelanggan kosong.',
+        );
+      }
     }
 
     const outlet = await this.outletRepository.update(id, {
