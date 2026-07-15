@@ -17,6 +17,27 @@ export class ShiftRepository {
     return this.prisma.cashierShift.findUnique({ where: { id } });
   }
 
+  /** Riwayat shift (laporan admin), filter outlet + rentang tanggal (openedAt). */
+  findMany(filter: {
+    outletId?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+  }): Promise<CashierShift[]> {
+    return this.prisma.cashierShift.findMany({
+      where: {
+        ...(filter.outletId && { outletId: filter.outletId }),
+        ...((filter.dateFrom || filter.dateTo) && {
+          openedAt: {
+            ...(filter.dateFrom && { gte: filter.dateFrom }),
+            ...(filter.dateTo && { lte: filter.dateTo }),
+          },
+        }),
+      },
+      orderBy: { openedAt: 'desc' },
+      take: 200,
+    });
+  }
+
   open(data: {
     userId: string;
     outletId: string;

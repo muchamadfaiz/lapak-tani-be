@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, ResponseMessage, Roles } from '../../common';
 import { CreatePosSaleDto, CloseShiftDto, OpenShiftDto } from './dto';
@@ -87,5 +87,18 @@ export class PosController {
     @Param('id') id: string,
   ) {
     return this.pos.receiveShipment(outletId, id);
+  }
+
+  // ── Laporan (khusus ADMIN) ──
+  @Roles('ADMIN')
+  @Get('shifts')
+  @ApiOperation({ summary: 'Laporan shift kasir (admin) — filter outlet & tanggal' })
+  @ResponseMessage('Success get shift reports')
+  shiftReports(
+    @Query('outletId') outletId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.pos.getShiftReports({ outletId, dateFrom, dateTo });
   }
 }

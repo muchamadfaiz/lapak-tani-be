@@ -11,6 +11,7 @@ export class FindAllOrdersUseCase {
     const orders = await this.orderRepository.findAll({
       status: query.status,
       outletId: query.outletId,
+      source: query.source,
     });
     return OrderMapper.toResponseDtoList(orders);
   }

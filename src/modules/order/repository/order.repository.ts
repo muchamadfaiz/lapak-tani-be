@@ -11,6 +11,7 @@ export type OrderWithRelations = Prisma.OrderGetPayload<{
 export interface OrderFilter {
   status?: string;
   outletId?: string;
+  source?: string; // online | pos
 }
 
 /**
@@ -87,6 +88,7 @@ export class OrderRepository {
     const where: Prisma.OrderWhereInput = {
       ...(filter.status && { status: filter.status }),
       ...(filter.outletId && { outletId: filter.outletId }),
+      ...(filter.source && { source: filter.source }),
     };
     return this.prisma.order.findMany({
       where,
