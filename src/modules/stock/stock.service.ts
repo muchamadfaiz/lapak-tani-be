@@ -18,6 +18,7 @@ import {
   StockShipmentView,
 } from './stock.contract';
 import {
+  AdjustStockDto,
   CreateProcurementDto,
   CreateShipmentDto,
   FindMovementsQueryDto,
@@ -96,6 +97,48 @@ export class StockService extends StockContract {
       })),
     );
     return procurement;
+  }
+
+  /**
+   * Koreksi stok / stok opname: set stok fisik satu produk di satu outlet.
+   * Menghitung selisih vs stok lama & mencatatnya ke buku besar (type
+   * 'adjustment') agar riwayat tetap konsisten dengan angka stok.
+   */
+  async adjustStock(dto: AdjustStockDto) {
+    const [outlet, product] = await Promise.all([
+      this.outletContract.findById(dto.outletId),
+      this.productContract.findById(dto.productId),
+    ]);
+    if (!outlet) throw new NotFoundException('Outlet/gudang tidak ditemukan');
+    if (!product) throw new NotFoundException('Produk tidak ditemukan');
+
+    const prev = await this.productContract.setStock(
+      dto.outletId,
+      dto.productId,
+      dto.quantity,
+    );
+    const delta = dto.quantity - prev;
+
+    if (delta !== 0) {
+      await this.repo.recordMovements([
+        {
+          productId: dto.productId,
+          outletId: dto.outletId,
+          type: 'adjustment',
+          quantity: delta, // +/- selisih koreksi
+          refType: 'manual',
+          note: dto.note ?? `Koreksi stok: ${prev} → ${dto.quantity}`,
+        },
+      ]);
+    }
+
+    return {
+      productId: dto.productId,
+      outletId: dto.outletId,
+      previousStock: prev,
+      newStock: dto.quantity,
+      delta,
+    };
   }
 
   async findProcurements(query: FindProcurementsQueryDto) {

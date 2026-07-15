@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ResponseMessage, Roles } from '../../common';
 import {
+  AdjustStockDto,
   CreateProcurementDto,
   CreateShipmentDto,
   FindMovementsQueryDto,
@@ -75,6 +76,16 @@ export class StockController {
   @ResponseMessage('Success cancel shipment')
   cancel(@Param('id') id: string) {
     return this.svc.cancelShipment(id);
+  }
+
+  @Roles('ADMIN')
+  @Post('adjustments')
+  @ApiOperation({
+    summary: 'Koreksi stok / stok opname — set stok fisik, selisih tercatat di buku besar',
+  })
+  @ResponseMessage('Success adjust stock')
+  adjust(@Body() dto: AdjustStockDto) {
+    return this.svc.adjustStock(dto);
   }
 
   @Roles('ADMIN')

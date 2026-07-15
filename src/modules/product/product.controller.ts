@@ -29,6 +29,7 @@ import {
   FindProductByIdUseCase,
   UpdateProductUseCase,
   RemoveProductUseCase,
+  FindStockLevelsUseCase,
 } from './use-cases';
 
 @ApiTags('Products')
@@ -40,6 +41,7 @@ export class ProductController {
     private readonly findProductByIdUseCase: FindProductByIdUseCase,
     private readonly updateProductUseCase: UpdateProductUseCase,
     private readonly removeProductUseCase: RemoveProductUseCase,
+    private readonly findStockLevelsUseCase: FindStockLevelsUseCase,
   ) {}
 
   @Public()
@@ -51,6 +53,16 @@ export class ProductController {
   @ResponseMessage('Success get products')
   findAll(@Query() query: FindProductsQueryDto) {
     return this.findAllProductsUseCase.execute(query);
+  }
+
+  @ApiBearerAuth()
+  @Roles('ADMIN')
+  @Get('stock-levels')
+  @ApiOperation({ summary: 'Matriks sisa stok produk × outlet (Sisa Stok admin)' })
+  @ApiResponse({ status: 200, description: 'Daftar stok per produk per outlet' })
+  @ResponseMessage('Success get stock levels')
+  findStockLevels() {
+    return this.findStockLevelsUseCase.execute();
   }
 
   @ApiBearerAuth()

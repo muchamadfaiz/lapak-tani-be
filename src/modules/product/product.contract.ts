@@ -54,4 +54,15 @@ export abstract class ProductContract {
     outletId: string,
     items: { productId: string; quantity: number }[],
   ): Promise<void>;
+
+  /**
+   * Set stok absolut satu produk pada satu outlet (koreksi/stok opname).
+   * Mengembalikan stok SEBELUMNYA agar pemanggil bisa mencatat selisih ke buku
+   * besar. Upsert bila baris belum ada.
+   */
+  abstract setStock(
+    outletId: string,
+    productId: string,
+    qty: number,
+  ): Promise<number>;
 }

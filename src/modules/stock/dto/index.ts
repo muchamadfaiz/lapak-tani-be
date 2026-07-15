@@ -122,6 +122,28 @@ export class FindProcurementsQueryDto extends PageOptionsDto {
  * Riwayat stok tumbuh cepat (tiap item terjual = 1 baris), jadi WAJIB
  * terpaginasi + bisa difilter per outlet/produk/tanggal.
  */
+/** Koreksi stok / stok opname: set stok absolut satu produk di satu outlet. */
+export class AdjustStockDto {
+  @ApiProperty({ description: 'Outlet (atau gudang)' })
+  @IsUUID()
+  outletId: string;
+
+  @ApiProperty({ description: 'Produk' })
+  @IsUUID()
+  productId: string;
+
+  @ApiProperty({ example: 50, description: 'Stok baru (jumlah fisik hasil hitung)' })
+  @IsInt()
+  @Min(0)
+  @Max(1_000_000)
+  quantity: number;
+
+  @ApiPropertyOptional({ example: 'Stok opname 15 Juli' })
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
 export class FindMovementsQueryDto extends PageOptionsDto {
   @ApiPropertyOptional()
   @IsOptional()

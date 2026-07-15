@@ -22,11 +22,8 @@ export class UpdateProductUseCase {
     if (dto.categoryId !== undefined) {
       await this.categoryContract.assertExists(dto.categoryId);
     }
-    if (dto.stocks) {
-      for (const s of dto.stocks) {
-        await this.outletContract.assertExists(s.outletId);
-      }
-    }
+    // Catatan: stok TIDAK lagi diubah dari form produk. Perubahan stok hanya
+    // lewat menu Stok (pengadaan/kiriman/koreksi) agar tercatat di buku besar.
 
     await this.productRepository.update(id, {
       ...(dto.name !== undefined && { name: dto.name }),
@@ -39,10 +36,6 @@ export class UpdateProductUseCase {
       ...(dto.isAvailable !== undefined && { isAvailable: dto.isAvailable }),
       ...(dto.isFeatured !== undefined && { isFeatured: dto.isFeatured }),
     });
-
-    if (dto.stocks) {
-      await this.productRepository.setStocks(id, dto.stocks);
-    }
 
     // Ambil ulang agar stok terbaru & outletStocks terisi di response.
     const fresh = await this.productRepository.findById(id);

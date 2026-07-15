@@ -43,6 +43,10 @@ export class ProductService extends ProductContract {
     return this.productRepository.restoreStock(outletId, items);
   }
 
+  setStock(outletId: string, productId: string, qty: number): Promise<number> {
+    return this.productRepository.setStock(outletId, productId, qty);
+  }
+
   increaseStock(
     outletId: string,
     items: { productId: string; quantity: number }[],

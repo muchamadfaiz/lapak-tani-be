@@ -48,6 +48,33 @@ export class ProductRepository {
     );
   }
 
+  /** Set stok absolut (koreksi). Kembalikan stok sebelumnya (0 bila belum ada). */
+  async setStock(
+    outletId: string,
+    productId: string,
+    qty: number,
+  ): Promise<number> {
+    const prev = await this.prisma.productOutlet.findUnique({
+      where: { productId_outletId: { productId, outletId } },
+      select: { stock: true },
+    });
+    await this.prisma.productOutlet.upsert({
+      where: { productId_outletId: { productId, outletId } },
+      update: { stock: qty },
+      create: { productId, outletId, stock: qty },
+    });
+    return prev?.stock ?? 0;
+  }
+
+  /** Semua produk aktif + rincian stok per outlet (untuk halaman Sisa Stok admin). */
+  findAllWithStocks(): Promise<ProductWithStocks[]> {
+    return this.prisma.product.findMany({
+      where: { deletedAt: null },
+      include: WITH_STOCKS,
+      orderBy: { name: 'asc' },
+    });
+  }
+
   // Hanya produk aktif (deletedAt: null) yang tampil di semua query.
   findById(id: string): Promise<ProductWithStocks | null> {
     return this.prisma.product.findFirst({

@@ -16,10 +16,6 @@ export class CreateProductUseCase {
   async execute(dto: CreateProductDto): Promise<ProductResponseDto> {
     // Validasi referensi lintas-modul lewat contract (bukan FK DB).
     await this.categoryContract.assertExists(dto.categoryId);
-    const stocks = dto.stocks ?? [];
-    for (const s of stocks) {
-      await this.outletContract.assertExists(s.outletId);
-    }
 
     const product = await this.productRepository.create({
       name: dto.name,
@@ -33,10 +29,7 @@ export class CreateProductUseCase {
       isFeatured: dto.isFeatured,
     });
 
-    if (stocks.length > 0) {
-      await this.productRepository.setStocks(product.id, stocks);
-    }
-
+    // Stok awal 0. Isi stok lewat menu Stok (pengadaan) agar tercatat di buku besar.
     // Ambil ulang agar outletStocks terisi di response.
     const fresh = await this.productRepository.findById(product.id);
     return ProductMapper.toAdminResponseDto(
