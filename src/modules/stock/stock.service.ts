@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,7 +12,11 @@ import {
   ShipmentWithItems,
   StockRepository,
 } from './repository/stock.repository';
-import { StockContract, StockLine } from './stock.contract';
+import {
+  StockContract,
+  StockLine,
+  StockShipmentView,
+} from './stock.contract';
 import {
   CreateProcurementDto,
   CreateShipmentDto,
@@ -222,6 +227,50 @@ export class StockService extends StockContract {
       })),
     );
     return this.repo.setShipmentStatus(id, 'received');
+  }
+
+  // ── StockContract: dipakai modul POS (kasir per-outlet) ──
+
+  async listIncomingShipments(
+    toOutletId: string,
+  ): Promise<StockShipmentView[]> {
+    const [rows] = await this.repo.findShipmentsAndCount(
+      { toOutletId, status: 'sent' },
+      { skip: 0, take: 100 },
+    );
+    return rows.map(StockService.toView);
+  }
+
+  async receiveShipmentForOutlet(
+    shipmentId: string,
+    outletId: string,
+  ): Promise<StockShipmentView> {
+    const shipment = await this.repo.findShipmentById(shipmentId);
+    if (!shipment) throw new NotFoundException('Kiriman tidak ditemukan');
+    // Kasir hanya boleh menerima kiriman untuk outletnya sendiri.
+    if (shipment.toOutletId !== outletId) {
+      throw new ForbiddenException('Kiriman ini bukan untuk outlet Anda');
+    }
+    const received = await this.receiveShipment(shipmentId);
+    return StockService.toView(received);
+  }
+
+  private static toView(s: ShipmentWithItems): StockShipmentView {
+    return {
+      id: s.id,
+      shipmentNumber: s.shipmentNumber,
+      fromOutletId: s.fromOutletId,
+      toOutletId: s.toOutletId,
+      status: s.status,
+      note: s.note,
+      sentAt: s.sentAt,
+      receivedAt: s.receivedAt,
+      items: s.items.map((i) => ({
+        productId: i.productId,
+        productName: i.productName,
+        quantity: i.quantity,
+      })),
+    };
   }
 
   /** Batalkan kiriman yang belum diterima → stok dikembalikan ke outlet asal. */

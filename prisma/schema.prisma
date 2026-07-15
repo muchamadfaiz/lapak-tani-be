@@ -157,6 +157,15 @@ model Order {
   paymentProofUrl String?
   paymentProofAt  DateTime?
 
+  // ── Penjualan kasir (POS) ──
+  // Asal transaksi: "online" (app/web pelanggan) | "pos" (kasir di outlet).
+  // Dipakai memisahkan omzet toko vs online pada laporan.
+  source          String @default("online")
+  // Sesi kasir pemilik transaksi (hanya untuk source = "pos").
+  shiftId         String?
+  // Uang tunai yang diterima kasir (untuk struk & rekap kas). null bila non-tunai.
+  amountPaid      Int?
+
   // Koordinat tujuan (opsional) untuk kalkulasi ongkir
   latitude    Float?
   longitude   Float?
@@ -213,6 +222,10 @@ model User {
 
   roleId            String
   role              Role      @relation(fields: [roleId], references: [id])
+
+  // Outlet tempat kasir bertugas (soft reference, tanpa FK lintas-modul).
+  // null untuk ADMIN — admin tidak terikat satu outlet.
+  outletId          String?
 
   isActive          Boolean   @default(true)
   emailVerifiedAt   DateTime?
@@ -486,6 +499,32 @@ model StockProcurementItem {
 
   @@index([procurementId])
   @@map("stock_procurement_items")
+}
+
+// Sesi kasir (shift). Kasir membuka kas dengan modal awal, melayani penjualan,
+// lalu menutup kas. Selisih kas dihitung dari penjualan TUNAI pada sesi ini.
+model CashierShift {
+  id          String @id @default(uuid())
+
+  // Soft reference (tanpa FK lintas-modul).
+  userId      String
+  outletId    String
+
+  status      String @default("open") // open | closed
+
+  /// Modal kas awal (Rupiah).
+  openingCash Int    @default(0)
+  /// Kas fisik saat tutup, diinput kasir. null selama sesi masih terbuka.
+  closingCash Int?
+
+  note        String? @db.Text
+
+  openedAt    DateTime  @default(now())
+  closedAt    DateTime?
+
+  @@index([outletId, status])
+  @@index([userId, status])
+  @@map("cashier_shifts")
 }
 
 // Buku besar stok — sumber "riwayat" pergerakan barang (auditable).

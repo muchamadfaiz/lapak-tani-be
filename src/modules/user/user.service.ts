@@ -86,6 +86,7 @@ export class UserService extends UserContract {
       isActive: user.isActive,
       deletedAt: user.deletedAt,
       emailVerifiedAt: user.emailVerifiedAt,
+      outletId: user.outletId ?? null,
       role: {
         id: user.role.id,
         name: user.role.name,

@@ -36,6 +36,12 @@ export class OrderRepository {
     longitude?: number;
     distanceKm?: number;
     expiresAt?: Date;
+    // Penjualan kasir (POS): status langsung `completed`, source `pos`, tanpa
+    // batas bayar. Default (online) tetap seperti sebelumnya.
+    status?: string;
+    source?: string;
+    shiftId?: string;
+    amountPaid?: number;
     items: {
       productId: string;
       productName: string;
@@ -95,6 +101,15 @@ export class OrderRepository {
       where: { id },
       data: { paymentProofUrl: url, paymentProofAt: new Date() },
       include: ORDER_INCLUDE,
+    });
+  }
+
+  /** Semua transaksi POS pada satu sesi kasir (rekap tutup kas + riwayat). */
+  findByShiftId(shiftId: string): Promise<OrderWithRelations[]> {
+    return this.prisma.order.findMany({
+      where: { shiftId },
+      include: ORDER_INCLUDE,
+      orderBy: { createdAt: 'desc' },
     });
   }
 

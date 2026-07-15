@@ -9,6 +9,12 @@ export interface UserForAuth {
   isActive: boolean;
   deletedAt: Date | null;
   emailVerifiedAt: Date | null;
+  /**
+   * Outlet tempat kasir bertugas. null untuk ADMIN (tidak terikat outlet).
+   * Dipakai membatasi kasir agar hanya bisa bertransaksi & menerima kiriman
+   * untuk outletnya sendiri.
+   */
+  outletId: string | null;
   role: {
     id: string;
     name: string;

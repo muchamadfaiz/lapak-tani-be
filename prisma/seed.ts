@@ -51,7 +51,14 @@ async function main() {
     update: {},
     create: { name: 'USER' },
   });
-  console.log('Seeded roles: ADMIN, USER');
+
+  // Role kasir (aplikasi POS). Dibutuhkan agar admin bisa membuat akun kasir.
+  const kasirRole = await prisma.role.upsert({
+    where: { name: 'KASIR' },
+    update: {},
+    create: { name: 'KASIR' },
+  });
+  console.log('Seeded roles: ADMIN, USER, KASIR');
 
   // 3. Assign permissions to roles
   // ADMIN gets all permissions
@@ -138,6 +145,26 @@ async function main() {
   }
   const [OUT_ILIR, OUT_BUKIT, OUT_JAKA, OUT_SAKO] = OUTLETS.map((o) => o.id);
   console.log(`Seeded ${OUTLETS.length} outlets`);
+
+  // Kasir demo (aplikasi POS) — ditugaskan ke outlet Ilir Barat.
+  // ⚠️ Kredensial demo; ganti/hapus di produksi.
+  const kasir = await prisma.user.upsert({
+    where: { email: 'kasir@example.com' },
+    update: { outletId: OUT_ILIR },
+    create: {
+      email: 'kasir@example.com',
+      password: await bcrypt.hash('kasir123', 10),
+      roleId: kasirRole.id,
+      outletId: OUT_ILIR,
+      emailVerifiedAt: new Date(),
+    },
+  });
+  await prisma.profile.upsert({
+    where: { userId: kasir.id },
+    update: {},
+    create: { userId: kasir.id, fullName: 'Kasir Ilir Barat' },
+  });
+  console.log('Seeded kasir user:', kasir.email, '→ outlet Ilir Barat');
 
   // 5c. Produk
   const PRODUCTS = [

@@ -29,6 +29,7 @@ import { OtpModule } from './modules/otp';
 import { BannerModule } from './modules/banner';
 import { SettingModule } from './modules/setting';
 import { StockModule } from './modules/stock';
+import { PosModule } from './modules/pos';
 
 import { RolesGuard } from './common';
 
@@ -85,6 +86,7 @@ import { RolesGuard } from './common';
     BannerModule,
     SettingModule,
     StockModule,
+    PosModule,
   ],
   providers: [
     // ThrottlerGuard didaftarkan pertama agar rate-limit jalan sebelum auth

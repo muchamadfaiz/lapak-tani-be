@@ -32,6 +32,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException();
     }
 
-    return { id: user.id, email: user.email, role: user.role.name };
+    // outletId dibaca dari DB (bukan dari token) agar perubahan penugasan kasir
+    // langsung berlaku tanpa menunggu token lama kedaluwarsa.
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role.name,
+      outletId: user.outletId,
+    };
   }
 }

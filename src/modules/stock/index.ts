@@ -1,2 +1,6 @@
-export { StockContract, type StockLine } from './stock.contract';
+export {
+  StockContract,
+  type StockLine,
+  type StockShipmentView,
+} from './stock.contract';
 export { StockModule } from './stock.module';
