@@ -57,10 +57,20 @@ export class UserRepository {
     return this.prisma.user.count({ where });
   }
 
+  /** User ber-role tertentu (mis. KASIR) beserta relasi. */
+  findByRole(roleName: string): Promise<UserWithRelations[]> {
+    return this.prisma.user.findMany({
+      where: { deletedAt: null, role: { name: roleName } },
+      include: USER_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   createWithProfile(data: {
     email: string;
     password: string;
     roleId: string;
+    outletId?: string;
     profile: { fullName: string; phone?: string; address?: string };
   }): Promise<UserWithRelations> {
     return this.prisma.$transaction(async (tx) => {
@@ -69,6 +79,7 @@ export class UserRepository {
           email: data.email,
           password: data.password,
           roleId: data.roleId,
+          outletId: data.outletId,
           emailVerifiedAt: new Date(),
         },
       });

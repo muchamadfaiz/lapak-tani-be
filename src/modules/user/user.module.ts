@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
+import { OutletModule } from '../outlet';
 import { UserController } from './user.controller';
+import { CashierController } from './cashier.controller';
+import { CashierService } from './cashier.service';
 import { UserRepository } from './repository/user.repository';
 import { UserContract } from './user.contract';
 import { UserService } from './user.service';
@@ -13,10 +16,13 @@ import {
 } from './use-cases';
 
 @Module({
-  controllers: [UserController],
+  // OutletContract untuk validasi & nama outlet saat kelola kasir.
+  imports: [OutletModule],
+  controllers: [UserController, CashierController],
   providers: [
     UserRepository,
     { provide: UserContract, useClass: UserService },
+    CashierService,
     FindAllUsersUseCase,
     FindUserByIdUseCase,
     CreateUserUseCase,
