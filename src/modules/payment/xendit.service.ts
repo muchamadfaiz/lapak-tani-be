@@ -28,6 +28,38 @@ interface XenditInvoice {
   payment_channel?: string;
 }
 
+/** QR dinamis Xendit (QR Codes API v2022-07-31). */
+export interface QrResult {
+  qrId: string;
+  qrString: string; // di-render jadi gambar QR di layar kasir
+  referenceId: string; // = orderNumber
+  amount: number;
+  expiresAt: string | null;
+}
+
+interface XenditQr {
+  id: string;
+  reference_id: string;
+  qr_string: string;
+  amount?: number;
+  status?: string;
+  expires_at?: string;
+}
+
+// Payload webhook pembayaran QR: { event:'qr.payment', data:{ qr_id, reference_id, status, amount } }
+interface XenditQrCallback {
+  event?: string;
+  data?: {
+    id?: string;
+    qr_id?: string;
+    reference_id?: string;
+    status?: string; // SUCCEEDED / COMPLETED
+    amount?: number;
+  };
+}
+
+const QR_API_VERSION = '2022-07-31';
+
 @Injectable()
 export class XenditService {
   private readonly logger = new Logger(XenditService.name);
@@ -41,6 +73,11 @@ export class XenditService {
     return this.cfg.enabled && !!this.cfg.secretKey;
   }
 
+  /** True bila memakai kunci sandbox Xendit (xnd_development_*). */
+  get sandbox(): boolean {
+    return this.cfg.secretKey.startsWith('xnd_development');
+  }
+
   /** Header Basic Auth: secretKey sebagai username, password kosong. */
   private authHeader(): string {
     const basic = Buffer.from(`${this.cfg.secretKey}:`).toString('base64');
@@ -51,6 +88,7 @@ export class XenditService {
     method: 'GET' | 'POST',
     path: string,
     body?: unknown,
+    extraHeaders?: Record<string, string>,
   ): Promise<T> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15_000);
@@ -61,6 +99,7 @@ export class XenditService {
         headers: {
           Authorization: this.authHeader(),
           'Content-Type': 'application/json',
+          ...extraHeaders,
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
         signal: controller.signal,
@@ -128,6 +167,42 @@ export class XenditService {
     return { paymentUrl: invoice.invoice_url, referenceId: invoice.id };
   }
 
+  /**
+   * Buat QRIS dinamis (nominal terkunci) untuk transaksi kasir. `reference_id`
+   * = orderNumber, sehingga webhook `qr.payment` bisa dicocokkan balik ke order.
+   */
+  async createQr(data: {
+    orderNumber: string;
+    amount: number;
+    expiresSec?: number;
+  }): Promise<QrResult> {
+    const expires_at = new Date(
+      Date.now() + (data.expiresSec ?? 900) * 1000,
+    ).toISOString();
+    const qr = await this.request<XenditQr>(
+      'POST',
+      '/qr_codes',
+      {
+        reference_id: data.orderNumber,
+        type: 'DYNAMIC',
+        currency: 'IDR',
+        amount: data.amount,
+        expires_at,
+      },
+      { 'api-version': QR_API_VERSION },
+    );
+    if (!qr.qr_string) {
+      throw new BadRequestException('Xendit tidak mengembalikan QR');
+    }
+    return {
+      qrId: qr.id,
+      qrString: qr.qr_string,
+      referenceId: qr.reference_id,
+      amount: qr.amount ?? data.amount,
+      expiresAt: qr.expires_at ?? expires_at,
+    };
+  }
+
   /** Cek status invoice by orderNumber (dipakai polling & self-heal). */
   async getStatusByOrderNumber(orderNumber: string): Promise<PaymentStatus> {
     const list = await this.request<XenditInvoice[]>(
@@ -148,6 +223,19 @@ export class XenditService {
   readCallback(token: string | undefined, body: unknown): PaymentStatus {
     if (!this.cfg.callbackToken || token !== this.cfg.callbackToken) {
       throw new BadRequestException('Callback token tidak valid');
+    }
+    // Dua bentuk payload: (1) QR payment (event 'qr.payment', punya data.reference_id)
+    // atau (2) Invoice (punya external_id di root).
+    const qr = body as XenditQrCallback;
+    if (qr?.data?.reference_id) {
+      const s = (qr.data.status || '').toUpperCase();
+      const status: PaymentStatus['status'] =
+        s === 'SUCCEEDED' || s === 'COMPLETED' || s === 'PAID'
+          ? 'confirmed'
+          : s === 'EXPIRED' || s === 'FAILED'
+            ? 'cancelled'
+            : 'pending';
+      return { orderNumber: qr.data.reference_id, status, paymentMethod: 'qris' };
     }
     const inv = body as XenditInvoice;
     if (!inv?.external_id || !inv?.status) {

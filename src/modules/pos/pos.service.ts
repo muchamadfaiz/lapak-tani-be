@@ -9,6 +9,7 @@ import { OrderContract, PosSaleResult } from '../order';
 import { StockContract, StockShipmentView } from '../stock';
 import { OutletContract } from '../outlet';
 import { UserContract } from '../user';
+import { PaymentContract } from '../payment';
 import { ShiftRepository } from './repository/shift.repository';
 import { CreatePosSaleDto, CloseShiftDto, OpenShiftDto } from './dto';
 
@@ -56,6 +57,7 @@ export class PosService {
     private readonly stockContract: StockContract,
     private readonly outletContract: OutletContract,
     private readonly userContract: UserContract,
+    private readonly paymentContract: PaymentContract,
   ) {}
 
   /** Laporan shift (admin): tiap shift + rekap penjualannya. */
@@ -121,6 +123,7 @@ export class PosService {
   ): Promise<{
     userId: string;
     email: string;
+    name: string;
     role: string;
     outletId: string | null;
     outletName: string | null;
@@ -130,7 +133,21 @@ export class PosService {
       const o = await this.outletContract.findById(outletId);
       outletName = o?.name ?? null;
     }
-    return { userId, email, role, outletId, outletName };
+    // Nama kasir untuk ditampilkan di struk & header POS.
+    let name = email;
+    try {
+      const u = await this.userContract.getById(userId);
+      name = u.profile?.fullName || u.email || email;
+    } catch {
+      /* fallback ke email */
+    }
+    return { userId, email, name, role, outletId, outletName };
+  }
+
+  /** Cari pelanggan by No HP (nama + poin) untuk konfirmasi di kasir. */
+  lookupCustomer(phone: string) {
+    if (!phone || phone.replace(/\D/g, '').length < 8) return null;
+    return this.orderContract.findCustomerByPhone(phone);
   }
 
   private assertOutlet(outletId: string | null | undefined): string {
@@ -205,6 +222,105 @@ export class PosService {
       customerName: dto.customerName,
       notes: dto.notes,
     });
+  }
+
+  /**
+   * Transaksi QRIS: buat order PENDING (stok direservasi) + QR dinamis Xendit.
+   * Kasir menampilkan QR; pelunasan terjadi lewat webhook. FE polling status.
+   */
+  async createQrisSale(
+    userId: string,
+    outletId: string | null,
+    dto: CreatePosSaleDto,
+  ): Promise<{
+    orderId: string;
+    orderNumber: string;
+    total: number;
+    qrString: string;
+    expiresAt: string | null;
+    sandbox: boolean;
+  }> {
+    const oid = this.assertOutlet(outletId);
+    const shift = await this.shiftRepo.findOpenByUser(userId);
+    if (!shift) {
+      throw new BadRequestException('Buka sesi kasir dulu sebelum bertransaksi');
+    }
+    const sale = await this.orderContract.createPosSalePending({
+      outletId: oid,
+      shiftId: shift.id,
+      items: dto.items,
+      paymentMethod: 'qris',
+      phone: dto.phone,
+      customerName: dto.customerName,
+      notes: dto.notes,
+    });
+    try {
+      const qr = await this.paymentContract.createPosQrCode(
+        sale.orderNumber,
+        sale.total,
+      );
+      return {
+        orderId: sale.id,
+        orderNumber: sale.orderNumber,
+        total: sale.total,
+        qrString: qr.qrString,
+        expiresAt: qr.expiresAt,
+        // Tombol "simulasikan bayar" hanya muncul di kasir saat mode sandbox.
+        sandbox: this.paymentContract.isSandbox(),
+      };
+    } catch (e) {
+      // Gagal buat QR → batalkan order pending agar stok kembali (tidak nyangkut).
+      await this.orderContract
+        .setStatusByNumber(sale.orderNumber, 'cancelled')
+        .catch(() => undefined);
+      throw e;
+    }
+  }
+
+  /**
+   * Status transaksi QRIS untuk polling kasir. Bila sudah LUNAS (completed),
+   * sertakan hasil transaksi lengkap untuk struk.
+   */
+  async getSaleStatus(
+    orderId: string,
+  ): Promise<{ status: string; sale: PosSaleResult | null }> {
+    const st = await this.orderContract.getPosOrderStatus(orderId);
+    if (!st) throw new NotFoundException('Transaksi tidak ditemukan');
+    const paid = st.status === 'completed';
+    return {
+      status: st.status,
+      sale: paid ? await this.orderContract.getPosSaleResult(orderId) : null,
+    };
+  }
+
+  /**
+   * DEMO/SANDBOX SAJA: tandai transaksi QRIS pending jadi lunas tanpa scan asli
+   * (menirukan webhook Xendit). Ditolak bila bukan mode sandbox — jadi aman di
+   * produksi.
+   */
+  async simulatePaid(orderId: string): Promise<{ ok: boolean }> {
+    if (!this.paymentContract.isSandbox()) {
+      throw new ForbiddenException('Simulasi hanya tersedia di mode sandbox');
+    }
+    const st = await this.orderContract.getPosOrderStatus(orderId);
+    if (!st) throw new NotFoundException('Transaksi tidak ditemukan');
+    if (st.status !== 'pending') {
+      throw new BadRequestException('Transaksi ini sudah tidak menunggu bayar');
+    }
+    // Jalur yang sama dengan webhook: confirmed → (POS) completed + poin.
+    await this.orderContract.setStatusByNumber(st.orderNumber, 'confirmed', 'qris');
+    return { ok: true };
+  }
+
+  /** Batalkan transaksi QRIS yang belum lunas → stok kembali. */
+  async cancelSale(orderId: string): Promise<{ ok: boolean }> {
+    const st = await this.orderContract.getPosOrderStatus(orderId);
+    if (!st) throw new NotFoundException('Transaksi tidak ditemukan');
+    if (st.status !== 'pending') {
+      throw new BadRequestException('Transaksi ini tidak bisa dibatalkan');
+    }
+    await this.orderContract.setStatusByNumber(st.orderNumber, 'cancelled');
+    return { ok: true };
   }
 
   async getShiftSales(userId: string): Promise<PosSaleResult[]> {

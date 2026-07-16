@@ -77,6 +77,36 @@ export abstract class OrderContract {
     notes?: string;
   }): Promise<PosSaleResult>;
 
+  /**
+   * Cari pelanggan by No HP (dipakai kasir POS untuk konfirmasi identitas &
+   * saldo poin saat mengetik nomor). Null bila belum terdaftar.
+   */
+  abstract findCustomerByPhone(
+    phone: string,
+  ): Promise<{ phone: string; name: string | null; points: number } | null>;
+
+  /**
+   * Penjualan kasir menunggu bayar QRIS: buat order `pending` (stok direservasi),
+   * pelunasan lewat webhook. Kembalikan info untuk membuat QR.
+   */
+  abstract createPosSalePending(input: {
+    outletId: string;
+    shiftId: string;
+    items: { productId: string; quantity: number }[];
+    paymentMethod: string;
+    phone?: string;
+    customerName?: string;
+    notes?: string;
+  }): Promise<{ id: string; orderNumber: string; total: number }>;
+
+  /** Status ringkas order POS (polling QRIS). Null bila bukan order POS. */
+  abstract getPosOrderStatus(
+    orderId: string,
+  ): Promise<{ status: string; orderNumber: string } | null>;
+
+  /** Hasil transaksi POS lengkap untuk struk (setelah QRIS lunas). */
+  abstract getPosSaleResult(orderId: string): Promise<PosSaleResult | null>;
+
   /** Rekap penjualan satu sesi kasir (untuk tutup kas). */
   abstract summarizeShiftSales(shiftId: string): Promise<ShiftSalesSummary>;
 

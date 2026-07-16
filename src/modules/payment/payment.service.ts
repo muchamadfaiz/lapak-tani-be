@@ -6,17 +6,48 @@ import {
 } from '@nestjs/common';
 import { OrderContract } from '../order';
 import { SettingContract } from '../setting';
+import { PaymentContract } from './payment.contract';
 import { CheckoutResult, XenditService } from './xendit.service';
 
 @Injectable()
-export class PaymentService {
+export class PaymentService extends PaymentContract {
   private readonly logger = new Logger(PaymentService.name);
 
   constructor(
     private readonly xendit: XenditService,
     private readonly orderContract: OrderContract,
     private readonly settingContract: SettingContract,
-  ) {}
+  ) {
+    super();
+  }
+
+  /** QRIS dinamis untuk transaksi kasir (dipakai modul POS). */
+  async createPosQrCode(
+    orderNumber: string,
+    amount: number,
+  ): Promise<{ qrString: string; qrId: string; expiresAt: string | null }> {
+    if (!this.xendit.enabled) {
+      throw new BadRequestException('Pembayaran online belum diaktifkan');
+    }
+    if (!(await this.settingContract.isOnlinePaymentEnabled())) {
+      throw new BadRequestException('Pembayaran online sedang dinonaktifkan');
+    }
+    // QRIS dibatasi regulator maks Rp10 juta per transaksi.
+    if (amount > 10_000_000) {
+      throw new BadRequestException(
+        'Nominal melebihi batas QRIS (maks Rp10 juta). Gunakan metode bayar lain.',
+      );
+    }
+    if (amount < 1) {
+      throw new BadRequestException('Nominal transaksi tidak valid');
+    }
+    const qr = await this.xendit.createQr({ orderNumber, amount });
+    return { qrString: qr.qrString, qrId: qr.qrId, expiresAt: qr.expiresAt };
+  }
+
+  isSandbox(): boolean {
+    return this.xendit.sandbox;
+  }
 
   /**
    * Buat halaman bayar (Xendit Invoice) untuk sebuah order pending.

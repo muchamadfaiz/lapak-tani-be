@@ -71,6 +71,48 @@ export class PosController {
     return this.pos.getShiftSales(userId);
   }
 
+  @Post('sales/qris')
+  @ApiOperation({ summary: 'Transaksi QRIS → order pending + QR dinamis Xendit' })
+  @ResponseMessage('Success create QRIS sale')
+  createQrisSale(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('outletId') outletId: string | null,
+    @Body() dto: CreatePosSaleDto,
+  ) {
+    return this.pos.createQrisSale(userId, outletId, dto);
+  }
+
+  @Get('sales/:id/status')
+  @ApiOperation({ summary: 'Status transaksi QRIS (polling) + struk bila lunas' })
+  @ApiParam({ name: 'id' })
+  @ResponseMessage('Success get sale status')
+  saleStatus(@Param('id') id: string) {
+    return this.pos.getSaleStatus(id);
+  }
+
+  @Patch('sales/:id/cancel')
+  @ApiOperation({ summary: 'Batalkan transaksi QRIS yang belum lunas → stok kembali' })
+  @ApiParam({ name: 'id' })
+  @ResponseMessage('Success cancel sale')
+  cancelSale(@Param('id') id: string) {
+    return this.pos.cancelSale(id);
+  }
+
+  @Post('sales/:id/simulate-paid')
+  @ApiOperation({ summary: '[SANDBOX] Tandai transaksi QRIS lunas untuk demo' })
+  @ApiParam({ name: 'id' })
+  @ResponseMessage('Success simulate payment')
+  simulatePaid(@Param('id') id: string) {
+    return this.pos.simulatePaid(id);
+  }
+
+  @Get('customer')
+  @ApiOperation({ summary: 'Cari pelanggan by No HP (konfirmasi nama & poin saat transaksi)' })
+  @ResponseMessage('Success lookup customer')
+  customer(@Query('phone') phone: string) {
+    return this.pos.lookupCustomer(phone);
+  }
+
   @Get('shipments/incoming')
   @ApiOperation({ summary: 'Kiriman menuju outlet kasir yang belum diterima' })
   @ResponseMessage('Success get incoming shipments')

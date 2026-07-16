@@ -73,6 +73,11 @@ export class OrderService extends OrderContract {
     if (!existing) {
       throw new NotFoundException('Order tidak ditemukan');
     }
+    // Transaksi kasir (POS) tak punya tahap kirim: begitu LUNAS langsung selesai.
+    // Webhook Xendit memberi 'confirmed' → untuk order POS artinya 'completed'.
+    if (status === 'confirmed' && existing.source === 'pos') {
+      status = 'completed';
+    }
     // Restock saat order dibatalkan (dari status non-cancelled).
     if (status === 'cancelled' && existing.status !== 'cancelled') {
       const lines = existing.items.map((i) => ({
@@ -101,16 +106,24 @@ export class OrderService extends OrderContract {
 
   // ── POS (penjualan kasir) ──
 
-  async createPosSale(input: {
-    outletId: string;
-    shiftId: string;
-    items: { productId: string; quantity: number }[];
-    paymentMethod: string;
-    amountPaid?: number;
-    phone?: string;
-    customerName?: string;
-    notes?: string;
-  }): Promise<PosSaleResult> {
+  /**
+   * Inti pembuatan order kasir (validasi stok, pelanggan, kurangi stok, simpan
+   * order + buku besar). Dipakai dua alur: LUNAS langsung (`completed`, tunai/
+   * kartu) atau MENUNGGU bayar (`pending`, QRIS). Poin BELUM diberikan di sini.
+   */
+  private async persistPosOrder(
+    input: {
+      outletId: string;
+      shiftId: string;
+      items: { productId: string; quantity: number }[];
+      paymentMethod: string;
+      amountPaid?: number;
+      phone?: string;
+      customerName?: string;
+      notes?: string;
+    },
+    status: 'completed' | 'pending',
+  ) {
     // 1. Validasi produk + stok di outlet ini (hindari N+1).
     const ids = [...new Set(input.items.map((i) => i.productId))];
     const products = await this.productContract.findByIds(ids);
@@ -159,13 +172,13 @@ export class OrderService extends OrderContract {
         )
       : await this.customerRepository.upsertByPhone(WALKIN_PHONE, 'Umum');
 
-    // 4. Kurangi stok atomik (anti oversell).
+    // 4. Kurangi stok atomik (anti oversell) — stok direservasi walau masih pending.
     await this.productContract.decrementStock(
       input.outletId,
       items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
     );
 
-    // 5. Simpan order LUNAS (completed), tanpa alamat/ongkir.
+    // 5. Simpan order, tanpa alamat/ongkir.
     const order = await this.orderRepository.createWithItems({
       orderNumber: generateOrderNumber(),
       customerId: customer.id,
@@ -177,7 +190,7 @@ export class OrderService extends OrderContract {
       deliveryOption: 'instant',
       shippingAddress: '-', // transaksi di tempat
       notes: input.notes,
-      status: 'completed',
+      status,
       source: 'pos',
       shiftId: input.shiftId,
       amountPaid: amountPaid ?? undefined,
@@ -191,33 +204,121 @@ export class OrderService extends OrderContract {
       order.id,
     );
 
-    // 7. Poin langsung dikreditkan (order sudah completed) — hanya bila No HP asli.
-    let earnedPoints = 0;
-    if (hasPhone) {
-      earnedPoints = calcEarnedPoints(total);
-      await this.customerRepository.awardPoints(customer.id, order.id, earnedPoints);
-    }
+    return { order, items, subtotal, total, amountPaid, changeAmount, customer, hasPhone };
+  }
 
+  private toPosResult(
+    r: Awaited<ReturnType<OrderService['persistPosOrder']>>,
+    paymentMethod: string,
+    fallbackName: string | undefined,
+    earnedPoints: number,
+  ): PosSaleResult {
     return {
-      id: order.id,
-      orderNumber: order.orderNumber,
-      outletId: order.outletId,
-      items: items.map((i) => ({
+      id: r.order.id,
+      orderNumber: r.order.orderNumber,
+      outletId: r.order.outletId,
+      items: r.items.map((i) => ({
         productName: i.productName,
         price: i.price,
         quantity: i.quantity,
         subtotal: i.subtotal,
       })),
-      subtotal,
-      total,
-      paymentMethod: input.paymentMethod,
-      amountPaid,
-      changeAmount,
-      customerName: hasPhone ? customer.name : input.customerName ?? null,
-      phone: hasPhone ? customer.phone : null,
+      subtotal: r.subtotal,
+      total: r.total,
+      paymentMethod,
+      amountPaid: r.amountPaid,
+      changeAmount: r.changeAmount,
+      customerName: r.hasPhone ? r.customer.name : fallbackName ?? null,
+      phone: r.hasPhone ? r.customer.phone : null,
       earnedPoints,
-      createdAt: order.createdAt,
+      createdAt: r.order.createdAt,
     };
+  }
+
+  async createPosSale(input: {
+    outletId: string;
+    shiftId: string;
+    items: { productId: string; quantity: number }[];
+    paymentMethod: string;
+    amountPaid?: number;
+    phone?: string;
+    customerName?: string;
+    notes?: string;
+  }): Promise<PosSaleResult> {
+    const r = await this.persistPosOrder(input, 'completed');
+    // Poin langsung dikreditkan (order sudah completed) — hanya bila No HP asli.
+    let earnedPoints = 0;
+    if (r.hasPhone) {
+      earnedPoints = calcEarnedPoints(r.total);
+      await this.customerRepository.awardPoints(r.customer.id, r.order.id, earnedPoints);
+    }
+    return this.toPosResult(r, input.paymentMethod, input.customerName, earnedPoints);
+  }
+
+  /**
+   * Penjualan kasir yang menunggu pembayaran QRIS. Order dibuat status `pending`
+   * (stok sudah direservasi). Pelunasan & poin terjadi lewat webhook Xendit
+   * (setStatusByNumber → completed). Mengembalikan info untuk membuat QR.
+   */
+  async createPosSalePending(input: {
+    outletId: string;
+    shiftId: string;
+    items: { productId: string; quantity: number }[];
+    paymentMethod: string;
+    phone?: string;
+    customerName?: string;
+    notes?: string;
+  }): Promise<{ id: string; orderNumber: string; total: number }> {
+    const r = await this.persistPosOrder(input, 'pending');
+    return { id: r.order.id, orderNumber: r.order.orderNumber, total: r.total };
+  }
+
+  /** Status ringkas satu order POS (untuk polling QRIS di kasir). */
+  async getPosOrderStatus(
+    orderId: string,
+  ): Promise<{ status: string; orderNumber: string } | null> {
+    const o = await this.orderRepository.findById(orderId);
+    if (!o || o.source !== 'pos') return null;
+    return { status: o.status, orderNumber: o.orderNumber };
+  }
+
+  /** Ambil hasil transaksi POS lengkap (untuk struk setelah QRIS lunas). */
+  async getPosSaleResult(orderId: string): Promise<PosSaleResult | null> {
+    const o = await this.orderRepository.findById(orderId);
+    if (!o || o.source !== 'pos') return null;
+    return {
+      id: o.id,
+      orderNumber: o.orderNumber,
+      outletId: o.outletId,
+      items: o.items.map((i) => ({
+        productName: i.productName,
+        price: i.price,
+        quantity: i.quantity,
+        subtotal: i.subtotal,
+      })),
+      subtotal: o.subtotal,
+      total: o.total,
+      paymentMethod: o.paymentMethod ?? 'qris',
+      amountPaid: o.amountPaid ?? null,
+      changeAmount: 0,
+      customerName: o.customer?.phone === WALKIN_PHONE ? null : o.customer?.name ?? null,
+      phone: o.customer?.phone === WALKIN_PHONE ? null : o.customer?.phone ?? null,
+      earnedPoints:
+        o.customer?.phone && o.customer.phone !== WALKIN_PHONE
+          ? calcEarnedPoints(o.total)
+          : 0,
+      createdAt: o.createdAt,
+    };
+  }
+
+  async findCustomerByPhone(
+    phone: string,
+  ): Promise<{ phone: string; name: string | null; points: number } | null> {
+    const normalized = normalizePhone(phone);
+    if (!normalized || normalized === WALKIN_PHONE) return null;
+    const c = await this.customerRepository.findByPhone(normalized);
+    if (!c) return null;
+    return { phone: c.phone, name: c.name, points: c.points };
   }
 
   async summarizeShiftSales(shiftId: string): Promise<ShiftSalesSummary> {
