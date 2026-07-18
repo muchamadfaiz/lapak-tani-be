@@ -28,6 +28,7 @@ export class CreateProductUseCase {
       isAvailable: dto.isAvailable,
       isFeatured: dto.isFeatured,
       soldByWeight: dto.soldByWeight,
+      barcode: dto.barcode,
     });
 
     // Stok awal 0. Isi stok lewat menu Stok (pengadaan) agar tercatat di buku besar.

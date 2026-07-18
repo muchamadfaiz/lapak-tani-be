@@ -21,6 +21,8 @@ export interface PosSaleResult {
     subtotal: number;
   }[];
   subtotal: number;
+  /** Potongan harga (Rupiah). 0 bila tak ada. */
+  discount: number;
   total: number;
   /** Status order: completed | pending | cancelled (untuk tandai void di riwayat). */
   status: string;
@@ -74,6 +76,7 @@ export abstract class OrderContract {
     items: { productId: string; quantity: number }[];
     paymentMethod: string;
     amountPaid?: number;
+    discount?: number;
     phone?: string;
     customerName?: string;
     notes?: string;
@@ -96,6 +99,7 @@ export abstract class OrderContract {
     shiftId: string;
     items: { productId: string; quantity: number }[];
     paymentMethod: string;
+    discount?: number;
     phone?: string;
     customerName?: string;
     notes?: string;

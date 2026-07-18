@@ -60,6 +60,11 @@ export class CreateProductDto {
   @IsString()
   unit?: string;
 
+  @ApiPropertyOptional({ description: 'Kode barcode/SKU untuk scan cepat di kasir' })
+  @IsOptional()
+  @IsString()
+  barcode?: string;
+
   @ApiPropertyOptional({ description: 'URL gambar produk' })
   @IsOptional()
   @IsString()

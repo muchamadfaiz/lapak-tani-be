@@ -119,6 +119,7 @@ export class OrderService extends OrderContract {
       items: { productId: string; quantity: number }[];
       paymentMethod: string;
       amountPaid?: number;
+      discount?: number;
       phone?: string;
       customerName?: string;
       notes?: string;
@@ -149,7 +150,9 @@ export class OrderService extends OrderContract {
     });
 
     const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
-    const total = subtotal; // kasir: tanpa ongkir
+    // Diskon (Rupiah) dibatasi 0..subtotal. Kasir: tanpa ongkir.
+    const discount = Math.min(Math.max(0, Math.round(input.discount ?? 0)), subtotal);
+    const total = subtotal - discount;
 
     // 2. Uang tunai wajib cukup untuk metode cash.
     let amountPaid: number | null = null;
@@ -187,6 +190,7 @@ export class OrderService extends OrderContract {
       outletId: input.outletId,
       subtotal,
       shippingCost: 0,
+      discount,
       total,
       paymentMethod: input.paymentMethod,
       deliveryOption: 'instant',
@@ -226,6 +230,7 @@ export class OrderService extends OrderContract {
         subtotal: i.subtotal,
       })),
       subtotal: r.subtotal,
+      discount: r.order.discount,
       total: r.total,
       status: r.order.status,
       paymentMethod,
@@ -244,6 +249,7 @@ export class OrderService extends OrderContract {
     items: { productId: string; quantity: number }[];
     paymentMethod: string;
     amountPaid?: number;
+    discount?: number;
     phone?: string;
     customerName?: string;
     notes?: string;
@@ -268,6 +274,7 @@ export class OrderService extends OrderContract {
     shiftId: string;
     items: { productId: string; quantity: number }[];
     paymentMethod: string;
+    discount?: number;
     phone?: string;
     customerName?: string;
     notes?: string;
@@ -300,6 +307,7 @@ export class OrderService extends OrderContract {
         subtotal: i.subtotal,
       })),
       subtotal: o.subtotal,
+      discount: o.discount,
       total: o.total,
       status: o.status,
       paymentMethod: o.paymentMethod ?? 'qris',
@@ -395,6 +403,7 @@ export class OrderService extends OrderContract {
         subtotal: i.subtotal,
       })),
       subtotal: o.subtotal,
+      discount: o.discount,
       total: o.total,
       status: o.status,
       paymentMethod: o.paymentMethod,

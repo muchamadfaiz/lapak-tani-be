@@ -34,6 +34,7 @@ export class ProductMapper {
       description: product.description,
       price: product.price,
       unit: product.unit,
+      barcode: product.barcode,
       imageUrl: product.imageUrl,
       categoryId: product.categoryId,
       stock: ProductMapper.resolveStock(product, outletId, warehouseIds),

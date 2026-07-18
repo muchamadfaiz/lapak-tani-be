@@ -28,6 +28,7 @@ export class OrderRepository {
     outletId: string;
     subtotal: number;
     shippingCost: number;
+    discount?: number;
     total: number;
     paymentMethod: string;
     deliveryOption: string;

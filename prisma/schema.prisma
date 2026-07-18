@@ -50,6 +50,8 @@ model Product {
   unit        String? // satuan: kg, gram, pcs, ikat, dll
   // Produk timbangan: dijual per berat (mis. per kg), qty boleh desimal (0,5 kg).
   soldByWeight Boolean @default(false)
+  // Kode barcode/SKU untuk scan cepat di kasir (opsional).
+  barcode     String?
   imageUrl    String?
 
   // Soft reference (TANPA FK lintas-modul) — divalidasi via CategoryContract.
@@ -151,6 +153,8 @@ model Order {
 
   subtotal      Int
   shippingCost  Int
+  // Potongan harga (Rupiah) — dipakai di kasir (nego/promo). total = subtotal - discount + ongkir.
+  discount      Int    @default(0)
   total         Int
 
   paymentMethod   String // transfer, cod/cash, qris/online, dll

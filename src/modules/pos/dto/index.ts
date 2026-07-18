@@ -54,6 +54,13 @@ export class CreatePosSaleDto {
   @Max(1_000_000_000)
   amountPaid?: number;
 
+  @ApiPropertyOptional({ example: 5000, description: 'Potongan harga (Rupiah)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1_000_000_000)
+  discount?: number;
+
   @ApiPropertyOptional({
     example: '081234567890',
     description: 'No HP pelanggan (opsional). Bila diisi, poin dikreditkan ke pelanggan.',

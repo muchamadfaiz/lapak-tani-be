@@ -36,6 +36,7 @@ export class UpdateProductUseCase {
       ...(dto.isAvailable !== undefined && { isAvailable: dto.isAvailable }),
       ...(dto.isFeatured !== undefined && { isFeatured: dto.isFeatured }),
       ...(dto.soldByWeight !== undefined && { soldByWeight: dto.soldByWeight }),
+      ...(dto.barcode !== undefined && { barcode: dto.barcode || null }),
     });
 
     // Ambil ulang agar stok terbaru & outletStocks terisi di response.

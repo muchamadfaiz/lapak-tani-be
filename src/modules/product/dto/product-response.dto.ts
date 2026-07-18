@@ -27,6 +27,9 @@ export class ProductResponseDto {
   @ApiProperty({ nullable: true, example: 'kg' })
   unit: string | null;
 
+  @ApiProperty({ nullable: true, description: 'Kode barcode/SKU' })
+  barcode: string | null;
+
   @ApiProperty({ nullable: true })
   imageUrl: string | null;
 
