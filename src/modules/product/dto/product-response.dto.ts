@@ -51,6 +51,9 @@ export class ProductResponseDto {
   @ApiProperty({ description: 'Produk unggulan (Produk Pilihan)' })
   isFeatured: boolean;
 
+  @ApiProperty({ description: 'Produk timbangan (dijual per berat, qty desimal)' })
+  soldByWeight: boolean;
+
   @ApiProperty()
   createdAt: Date;
 

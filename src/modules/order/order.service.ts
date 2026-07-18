@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -142,7 +143,8 @@ export class OrderService extends OrderContract {
         productName: p.name,
         price: p.price,
         quantity: it.quantity,
-        subtotal: p.price * it.quantity,
+        // Bulatkan ke rupiah utuh (qty bisa desimal untuk produk timbangan).
+        subtotal: Math.round(p.price * it.quantity),
       };
     });
 
@@ -225,6 +227,7 @@ export class OrderService extends OrderContract {
       })),
       subtotal: r.subtotal,
       total: r.total,
+      status: r.order.status,
       paymentMethod,
       amountPaid: r.amountPaid,
       changeAmount: r.changeAmount,
@@ -298,6 +301,7 @@ export class OrderService extends OrderContract {
       })),
       subtotal: o.subtotal,
       total: o.total,
+      status: o.status,
       paymentMethod: o.paymentMethod ?? 'qris',
       amountPaid: o.amountPaid ?? null,
       changeAmount: 0,
@@ -309,6 +313,43 @@ export class OrderService extends OrderContract {
           : 0,
       createdAt: o.createdAt,
     };
+  }
+
+  /**
+   * Void/batal transaksi kasir yang SUDAH selesai: kembalikan stok, catat di
+   * buku besar, tarik poin. Hanya untuk transaksi pada sesi (shift) yang sama —
+   * agar rekap tutup kas tetap akurat.
+   */
+  async voidPosSale(orderId: string, shiftId: string): Promise<PosSaleResult> {
+    const o = await this.orderRepository.findById(orderId);
+    if (!o || o.source !== 'pos') {
+      throw new NotFoundException('Transaksi tidak ditemukan');
+    }
+    if (o.shiftId !== shiftId) {
+      throw new ForbiddenException(
+        'Hanya transaksi pada sesi kasir ini yang bisa dibatalkan',
+      );
+    }
+    if (o.status === 'cancelled') {
+      throw new BadRequestException('Transaksi ini sudah dibatalkan');
+    }
+    if (o.status !== 'completed') {
+      throw new BadRequestException(
+        'Hanya transaksi yang sudah lunas yang bisa dibatalkan di sini',
+      );
+    }
+
+    const lines = o.items.map((i) => ({
+      productId: i.productId,
+      quantity: i.quantity,
+    }));
+    await this.productContract.restoreStock(o.outletId, lines);
+    await this.stockContract.recordSaleCancel(o.outletId, lines, o.id);
+    await this.orderRepository.updateStatus(o.id, 'cancelled');
+    await this.customerRepository.reversePoints(o.customerId, o.id);
+
+    const result = await this.getPosSaleResult(orderId);
+    return result!;
   }
 
   async findCustomerByPhone(
@@ -355,6 +396,7 @@ export class OrderService extends OrderContract {
       })),
       subtotal: o.subtotal,
       total: o.total,
+      status: o.status,
       paymentMethod: o.paymentMethod,
       amountPaid,
       changeAmount: amountPaid !== null ? Math.max(0, amountPaid - o.total) : 0,

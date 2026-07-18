@@ -71,6 +71,40 @@ export class CustomerRepository {
     });
   }
 
+  /**
+   * Tarik kembali poin dari order yang dibatalkan/void (idempotent: 1 reversal
+   * per orderId). Saldo tak boleh minus (clamp ke 0).
+   */
+  async reversePoints(customerId: string, orderId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const earned = await tx.pointTransaction.findFirst({
+        where: { orderId, type: 'earn' },
+      });
+      if (!earned) return; // order ini tak pernah dapat poin
+      const already = await tx.pointTransaction.findFirst({
+        where: { orderId, type: 'void' },
+      });
+      if (already) return; // sudah pernah ditarik
+      const customer = await tx.customer.findUnique({ where: { id: customerId } });
+      if (!customer) return;
+      const newBalance = Math.max(0, customer.points - earned.amount);
+      await tx.customer.update({
+        where: { id: customerId },
+        data: { points: newBalance },
+      });
+      await tx.pointTransaction.create({
+        data: {
+          customerId,
+          orderId,
+          type: 'void',
+          amount: earned.amount,
+          balanceAfter: newBalance,
+          note: 'Poin ditarik — transaksi dibatalkan',
+        },
+      });
+    });
+  }
+
   getPointHistory(customerId: string): Promise<PointTransaction[]> {
     return this.prisma.pointTransaction.findMany({
       where: { customerId },

@@ -45,9 +45,11 @@ model Product {
   id          String   @id @default(uuid())
   name        String
   description String?  @db.Text
-  price       Int // Rupiah (tanpa desimal) — harga jual
+  price       Int // Rupiah (tanpa desimal) — harga JUAL (per satuan / per kg)
   costPrice   Int? // Rupiah — harga modal (opsional, internal)
   unit        String? // satuan: kg, gram, pcs, ikat, dll
+  // Produk timbangan: dijual per berat (mis. per kg), qty boleh desimal (0,5 kg).
+  soldByWeight Boolean @default(false)
   imageUrl    String?
 
   // Soft reference (TANPA FK lintas-modul) — divalidasi via CategoryContract.
@@ -82,7 +84,9 @@ model ProductOutlet {
   // Soft reference ke Outlet (TANPA FK lintas-modul) — divalidasi via OutletContract.
   outletId  String
 
-  stock     Int     @default(0)
+  // Float agar mendukung produk timbangan (mis. 10.5 kg). Produk satuan tetap
+  // memakai nilai bulat, jadi tetap ter-serialisasi sebagai bilangan bulat.
+  stock     Float   @default(0)
 
   updatedAt DateTime @updatedAt
 
@@ -209,7 +213,7 @@ model OrderItem {
   productId   String
   productName String
   price       Int
-  quantity    Int
+  quantity    Float // Float untuk produk timbangan (mis. 0,5 kg)
   subtotal    Int
 
   @@map("order_items")
@@ -452,7 +456,7 @@ model StockShipmentItem {
   productId  String
   // Snapshot nama agar riwayat tetap terbaca walau produk berubah/terhapus.
   productName String
-  quantity   Int
+  quantity   Float
 
   @@index([shipmentId])
   @@map("stock_shipment_items")
@@ -490,7 +494,7 @@ model StockProcurementItem {
 
   productId     String
   productName   String // snapshot agar riwayat tetap terbaca
-  quantity      Int
+  quantity      Float
 
   /// Harga modal per satuan (Rupiah). null = tidak dicatat.
   unitCost      Int?
@@ -537,7 +541,7 @@ model StockMovement {
   outletId  String
 
   type      String // purchase_in | transfer_out | transfer_in | adjustment
-  quantity  Int
+  quantity  Float
 
   // Referensi asal-usul (mis. shipmentId) agar bisa ditelusuri.
   refType   String?

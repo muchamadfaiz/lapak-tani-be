@@ -39,6 +39,7 @@ export class ProductMapper {
       stock: ProductMapper.resolveStock(product, outletId, warehouseIds),
       isAvailable: product.isAvailable,
       isFeatured: product.isFeatured,
+      soldByWeight: product.soldByWeight,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };

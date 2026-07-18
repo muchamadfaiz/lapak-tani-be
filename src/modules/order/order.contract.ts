@@ -22,6 +22,8 @@ export interface PosSaleResult {
   }[];
   subtotal: number;
   total: number;
+  /** Status order: completed | pending | cancelled (untuk tandai void di riwayat). */
+  status: string;
   paymentMethod: string;
   /** Uang tunai diterima (null bila non-tunai). */
   amountPaid: number | null;
@@ -106,6 +108,12 @@ export abstract class OrderContract {
 
   /** Hasil transaksi POS lengkap untuk struk (setelah QRIS lunas). */
   abstract getPosSaleResult(orderId: string): Promise<PosSaleResult | null>;
+
+  /**
+   * Void transaksi kasir yang sudah lunas (kembalikan stok + tarik poin). Hanya
+   * untuk transaksi pada `shiftId` yang sama. Kembalikan data transaksi yang dibatalkan.
+   */
+  abstract voidPosSale(orderId: string, shiftId: string): Promise<PosSaleResult>;
 
   /** Rekap penjualan satu sesi kasir (untuk tutup kas). */
   abstract summarizeShiftSales(shiftId: string): Promise<ShiftSalesSummary>;

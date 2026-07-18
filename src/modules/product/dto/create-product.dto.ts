@@ -88,4 +88,12 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
+
+  @ApiPropertyOptional({
+    default: false,
+    description: 'Produk timbangan — dijual per berat (mis. per kg), qty boleh desimal',
+  })
+  @IsOptional()
+  @IsBoolean()
+  soldByWeight?: boolean;
 }

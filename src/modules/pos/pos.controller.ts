@@ -106,6 +106,14 @@ export class PosController {
     return this.pos.simulatePaid(id);
   }
 
+  @Patch('sales/:id/void')
+  @ApiOperation({ summary: 'Batalkan (void) transaksi lunas pada sesi ini → stok kembali' })
+  @ApiParam({ name: 'id' })
+  @ResponseMessage('Success void sale')
+  voidSale(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.pos.voidSale(userId, id);
+  }
+
   @Get('customer')
   @ApiOperation({ summary: 'Cari pelanggan by No HP (konfirmasi nama & poin saat transaksi)' })
   @ResponseMessage('Success lookup customer')

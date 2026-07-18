@@ -5,6 +5,7 @@ import {
   IsArray,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -23,10 +24,11 @@ export class PosItemDto {
   @IsUUID()
   productId: string;
 
-  @ApiProperty({ example: 2, minimum: 1 })
-  @IsInt()
-  @Min(1)
-  @Max(10_000)
+  // Float: mendukung produk timbangan (mis. 0.5 kg). Produk satuan pakai bilangan bulat.
+  @ApiProperty({ example: 2, minimum: 0.001 })
+  @IsNumber({ maxDecimalPlaces: 3 })
+  @Min(0.001)
+  @Max(100_000)
   quantity: number;
 }
 

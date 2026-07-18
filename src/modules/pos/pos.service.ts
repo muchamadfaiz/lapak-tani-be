@@ -329,6 +329,15 @@ export class PosService {
     return this.orderContract.findShiftSales(shift.id);
   }
 
+  /** Batalkan (void) transaksi lunas pada sesi kasir yang sedang berjalan. */
+  async voidSale(userId: string, orderId: string): Promise<PosSaleResult> {
+    const shift = await this.shiftRepo.findOpenByUser(userId);
+    if (!shift) {
+      throw new BadRequestException('Buka sesi kasir dulu untuk membatalkan transaksi');
+    }
+    return this.orderContract.voidPosSale(orderId, shift.id);
+  }
+
   // ── Kiriman (kasir terima barang) ──
 
   listIncoming(outletId: string | null): Promise<StockShipmentView[]> {
