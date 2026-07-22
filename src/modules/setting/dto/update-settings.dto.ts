@@ -1,6 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { CHAT_LANGUAGES } from '../setting.contract';
 import {
   IsBoolean,
+  IsIn,
   IsInt,
   Max,
   Min,
@@ -161,4 +163,13 @@ export class UpdateSettingsDto {
   @Min(1)
   @Max(10_000_000)
   pointPerRupiah?: number;
+
+  @ApiPropertyOptional({
+    enum: CHAT_LANGUAGES,
+    example: 'palembang',
+    description: 'Bahasa jawaban asisten CS.',
+  })
+  @IsOptional()
+  @IsIn(CHAT_LANGUAGES as unknown as string[])
+  chatLanguage?: string;
 }

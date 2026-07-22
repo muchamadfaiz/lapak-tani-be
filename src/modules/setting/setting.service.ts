@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { SettingRepository } from './repository/setting.repository';
 import {
   BusinessRules,
+  CHAT_LANGUAGES,
+  ChatLanguage,
   PublicPaymentSettings,
   PublicSettings,
   SETTING_KEYS,
@@ -35,6 +37,10 @@ const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.shippingRateInstant]: '10000',
   [SETTING_KEYS.shippingRateScheduled]: '2000',
   [SETTING_KEYS.pointPerRupiah]: '1000',
+  // Bawaan Bahasa Indonesia — netral. Dialek daerah sengaja BUKAN bawaan:
+  // kalau aplikasi ini dipakai kota lain dan admin lupa mengubahnya, bot
+  // akan bicara dengan dialek yang salah tempat.
+  [SETTING_KEYS.chatLanguage]: 'id',
 };
 
 /**
@@ -92,6 +98,14 @@ export class SettingService extends SettingContract {
     return nilai;
   }
 
+  async getChatLanguage(): Promise<ChatLanguage> {
+    const map = await this.repo.findMany([SETTING_KEYS.chatLanguage]);
+    const raw = map.get(SETTING_KEYS.chatLanguage) ?? 'id';
+    return (CHAT_LANGUAGES as readonly string[]).includes(raw)
+      ? (raw as ChatLanguage)
+      : 'id';
+  }
+
   async update(patch: Record<string, string>): Promise<Record<string, string>> {
     // Perubahan harus langsung terasa, jangan menunggu TTL habis.
     this.rulesCache = null;
@@ -144,6 +158,13 @@ export class SettingService extends SettingContract {
         serviceHours: all[SETTING_KEYS.shopServiceHours].trim(),
       },
       rules: await this.getBusinessRules(),
+      chat: {
+        language: (CHAT_LANGUAGES as readonly string[]).includes(
+          all[SETTING_KEYS.chatLanguage],
+        )
+          ? (all[SETTING_KEYS.chatLanguage] as ChatLanguage)
+          : 'id',
+      },
       theme: {
         // Hanya lolos bila hex 6 digit yang sah; selain itu dianggap kosong
         // supaya warna ngawur di DB tak sampai merusak tampilan.

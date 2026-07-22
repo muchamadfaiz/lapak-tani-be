@@ -80,6 +80,9 @@ export class SettingController {
     ] as const) {
       if (dto[k] !== undefined) patch[SETTING_KEYS[k]] = String(dto[k]);
     }
+    if (dto.chatLanguage !== undefined) {
+      patch[SETTING_KEYS.chatLanguage] = dto.chatLanguage;
+    }
     await this.svc.update(patch);
     return this.svc.getPublicSettings();
   }

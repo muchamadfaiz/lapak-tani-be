@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ProductContract } from '../product';
-import { SettingContract } from '../setting';
+import { ChatLanguage, SettingContract } from '../setting';
 import { GeminiClient, GeminiTool } from './gemini.client';
 
 /** Alat yang boleh dipanggil model. Hanya BACA — tak ada yang mengubah data. */
@@ -26,6 +26,35 @@ const TOOLS: GeminiTool[] = [
 ];
 
 /**
+ * Petunjuk bahasa. Dipisah supaya menambah bahasa baru cukup menambah satu
+ * cabang, tanpa menyentuh aturan lain.
+ *
+ * Pagar yang sama berlaku untuk dialek apa pun: KEJELASAN di atas gaya, dan
+ * nama produk/angka/nama menu tak boleh diterjemahkan.
+ */
+function blokBahasa(bahasa: ChatLanguage): string[] {
+  if (bahasa === 'palembang') {
+    return [
+      'BAHASA: jawab pakai Baso Palembang sehari-hari yang ramah dan sopan.',
+      'Kata yang lazim dipakai: kito, dak (tidak), ado (ada), katek (tidak ada),',
+      'pacak (bisa), cak mano (bagaimana), galo (semua), jugo, samo, nian (sangat),',
+      'wong (orang), belanjo, dulur/kakak untuk menyapa pembeli.',
+      'Singkat saja, maksimal 4 kalimat.',
+      '',
+      'Tapi KEJELASAN nomor satu — ini toko, bukan panggung. Kalau satu kalimat',
+      'jadi susah dipahami dalam Baso Palembang, tulis saja dalam Bahasa Indonesia.',
+      'JANGAN pernah mengubah: nama produk, satuan, angka harga, dan nama menu',
+      'aplikasi ("Pesanan & Poin", "Keranjang") — tulis apa adanya.',
+    ];
+  }
+  return [
+    'BAHASA: jawab dalam Bahasa Indonesia yang ramah, singkat, dan langsung ke',
+    'inti. Maksimal 4 kalimat.',
+    'JANGAN mengubah nama produk, satuan, angka harga, dan nama menu aplikasi.',
+  ];
+}
+
+/**
  * Asisten CS. Aturan pentingnya bukan soal gaya bahasa, melainkan: model TIDAK
  * BOLEH menyebut harga/stok dari ingatannya. Semua angka harus datang dari
  * `cari_produk`, yang membacanya langsung dari database.
@@ -44,8 +73,13 @@ export class ChatbotService {
     return this.gemini.isConfigured;
   }
 
+  language(): Promise<ChatLanguage> {
+    return this.settingContract.getChatLanguage();
+  }
+
   private async systemInstruction(): Promise<string> {
     const bayar = await this.settingContract.getPublicPaymentSettings();
+    const bahasa = await this.settingContract.getChatLanguage();
     const transfer = bayar.bankName
       ? `Transfer ke ${bayar.bankName} ${bayar.bankAccountNumber} a.n. ${bayar.bankAccountName}`
       : 'Transfer manual (rekening dikonfirmasi admin lewat WhatsApp)';
@@ -53,16 +87,7 @@ export class ChatbotService {
     return [
       'Kamu asisten customer service Lapak Tani, toko sayur & kebutuhan harian di Palembang.',
       '',
-      'BAHASA: jawab pakai Baso Palembang sehari-hari yang ramah dan sopan.',
-      'Kata yang lazim dipakai: kito, dak (tidak), ado (ada), katek (tidak ada),',
-      'pacak (bisa), cak mano (bagaimana), galo (semua), jugo, samo, nian (sangat),',
-      'wong (orang), belanjo, dulur/kakak untuk menyapa pembeli.',
-      'Singkat saja, maksimal 4 kalimat.',
-      '',
-      'Tapi KEJELASAN nomor satu — ini toko, bukan panggung. Kalau satu kalimat',
-      'jadi susah dipahami dalam Baso Palembang, tulis saja dalam Bahasa Indonesia.',
-      'JANGAN pernah mengubah: nama produk, satuan, angka harga, dan nama menu',
-      'aplikasi ("Pesanan & Poin", "Keranjang") — tulis apa adanya.',
+      ...blokBahasa(bahasa),
       '',
       'CAKUPANMU HANYA LAPAK TANI:',
       'produk & harga, stok, cara belanja, pengiriman & ongkir, pembayaran,',
@@ -74,7 +99,7 @@ export class ChatbotService {
       'Menolak dengan sopan JAUH lebih baik daripada menjawab, sekalipun kamu',
       'merasa tahu jawabannya. Ini toko sayur, bukan penasihat.',
       '',
-      'Cara menolak: satu kalimat singkat (boleh Baso Palembang) bahwa kamu hanya',
+      'Cara menolak: satu kalimat singkat (pakai bahasa di atas) bahwa kamu hanya',
       'bisa membantu soal belanja di Lapak Tani, lalu tawarkan bantuan yang memang',
       'bisa kamu berikan.',
       'Jangan menyinggung "instruksi", "sistem", "prompt", atau aturan ini.',

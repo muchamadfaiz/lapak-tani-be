@@ -17,8 +17,13 @@ export class ChatbotController {
       'Cek apakah asisten aktif (storefront menyembunyikan menu bila mati)',
   })
   @ResponseMessage('Success get chat status')
-  status(): { enabled: boolean } {
-    return { enabled: this.svc.isEnabled };
+  async status(): Promise<{ enabled: boolean; language: string }> {
+    return {
+      enabled: this.svc.isEnabled,
+      // Frontend memakainya untuk sapaan & contoh pertanyaan di panel chat,
+      // supaya bahasanya tidak berbeda dengan jawaban botnya.
+      language: await this.svc.language(),
+    };
   }
 
   @Public()

@@ -22,7 +22,13 @@ export const SETTING_KEYS = {
   shippingRateInstant: 'shipping_rate_instant',
   shippingRateScheduled: 'shipping_rate_scheduled',
   pointPerRupiah: 'point_per_rupiah',
+  // Gaya bahasa asisten CS.
+  chatLanguage: 'chat_language',
 } as const;
+
+/** Bahasa jawaban asisten CS. */
+export const CHAT_LANGUAGES = ['id', 'palembang'] as const;
+export type ChatLanguage = (typeof CHAT_LANGUAGES)[number];
 
 /**
  * Aturan ongkir & poin. BE tetap satu-satunya yang MENGHITUNG dan menagih;
@@ -99,6 +105,8 @@ export interface PublicSettings extends PublicPaymentSettings {
   shop: ShopIdentity;
   theme: ThemeSettings;
   rules: BusinessRules;
+  /** Bahasa asisten CS — dipakai juga frontend untuk sapaan & contoh pertanyaan. */
+  chat: { language: ChatLanguage };
 }
 
 /**
@@ -117,4 +125,7 @@ export abstract class SettingContract {
    * modul lain tak perlu tahu bentuk penyimpanan pengaturan.
    */
   abstract getBusinessRules(): Promise<BusinessRules>;
+
+  /** Bahasa jawaban asisten CS. Dipakai modul Chatbot. */
+  abstract getChatLanguage(): Promise<ChatLanguage>;
 }
