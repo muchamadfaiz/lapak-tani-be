@@ -12,12 +12,37 @@ export interface ProductRef {
 }
 
 /**
+ * Hasil pencarian untuk asisten chat: cukup yang boleh disebut ke pelanggan.
+ * Sengaja memuat harga & promo agar bot tak perlu mengarang angka.
+ */
+export interface ProductSearchResult {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number | null;
+  unit: string | null;
+  tags: string[];
+  isAvailable: boolean;
+  /** Total stok jual seluruh outlet (gudang tidak dihitung). */
+  stock: number;
+}
+
+/**
  * Batas publik modul Product. Modul lain bergantung pada kontrak ini, bukan
  * pada repository/use-case internal Product.
  */
 export abstract class ProductContract {
   /** Ambil referensi produk by id, null bila tidak ada. */
   abstract findById(id: string): Promise<ProductRef | null>;
+
+  /**
+   * Cari produk yang tersedia berdasarkan kata kunci nama. Dipakai asisten
+   * chat supaya harga & stok yang disebut selalu berasal dari database.
+   */
+  abstract search(
+    keyword: string,
+    limit?: number,
+  ): Promise<ProductSearchResult[]>;
 
   /** Ambil banyak produk sekaligus (hindari N+1 saat Order memproses item). */
   abstract findByIds(ids: string[]): Promise<ProductRef[]>;

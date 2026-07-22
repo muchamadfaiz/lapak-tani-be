@@ -1,9 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { OutletContract } from '../outlet';
 import {
   ProductRepository,
   ProductWithStocks,
 } from './repository/product.repository';
-import { ProductContract, ProductRef } from './product.contract';
+import {
+  ProductContract,
+  ProductRef,
+  ProductSearchResult,
+} from './product.contract';
 
 /**
  * Implementasi ProductContract — memenuhi janji lintas-modul. CRUD produk milik
@@ -11,7 +16,10 @@ import { ProductContract, ProductRef } from './product.contract';
  */
 @Injectable()
 export class ProductService extends ProductContract {
-  constructor(private readonly productRepository: ProductRepository) {
+  constructor(
+    private readonly productRepository: ProductRepository,
+    private readonly outletContract: OutletContract,
+  ) {
     super();
   }
 
@@ -23,6 +31,32 @@ export class ProductService extends ProductContract {
   async findByIds(ids: string[]): Promise<ProductRef[]> {
     const products = await this.productRepository.findByIds(ids);
     return products.map((p) => ProductService.toRef(p));
+  }
+
+  async search(keyword: string, limit = 8): Promise<ProductSearchResult[]> {
+    const [products] = await this.productRepository.findAndCount(
+      { search: keyword, available: true },
+      { skip: 0, take: limit, orderBy: { name: 'asc' } },
+    );
+    // Gudang dikecualikan: stoknya belum bisa dijual, jadi jangan sampai bot
+    // menjanjikan barang yang sebenarnya belum ada di rak outlet.
+    const warehouseIds = await this.outletContract.findWarehouseIds();
+    return products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      // Harga coret hanya sah bila di ATAS harga jual (lihat ProductMapper).
+      originalPrice:
+        p.originalPrice !== null && p.originalPrice > p.price
+          ? p.originalPrice
+          : null,
+      unit: p.unit,
+      tags: p.tags,
+      isAvailable: p.isAvailable,
+      stock: (p.outletStocks ?? [])
+        .filter((s) => !warehouseIds.includes(s.outletId))
+        .reduce((sum, s) => sum + s.stock, 0),
+    }));
   }
 
   getStock(
