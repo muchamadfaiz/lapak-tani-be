@@ -26,6 +26,8 @@ const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.shopLogoUrl]: '',
   [SETTING_KEYS.shopWhatsapp]: process.env.WHATSAPP_ADMIN_NUMBER || '',
   [SETTING_KEYS.shopServiceHours]: '',
+  // Kosong = frontend memakai palet bawaannya.
+  [SETTING_KEYS.themeBrandColor]: '',
 };
 
 @Injectable()
@@ -91,6 +93,15 @@ export class SettingService extends SettingContract {
         // sedangkan tautan wa.me hanya menerima digit.
         whatsapp: all[SETTING_KEYS.shopWhatsapp].replace(/\D/g, ''),
         serviceHours: all[SETTING_KEYS.shopServiceHours].trim(),
+      },
+      theme: {
+        // Hanya lolos bila hex 6 digit yang sah; selain itu dianggap kosong
+        // supaya warna ngawur di DB tak sampai merusak tampilan.
+        brandColor: /^#[0-9a-f]{6}$/i.test(
+          all[SETTING_KEYS.themeBrandColor].trim(),
+        )
+          ? all[SETTING_KEYS.themeBrandColor].trim().toLowerCase()
+          : '',
       },
     };
   }

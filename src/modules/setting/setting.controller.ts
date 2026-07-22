@@ -69,6 +69,9 @@ export class SettingController {
     if (dto.shopServiceHours !== undefined) {
       patch[SETTING_KEYS.shopServiceHours] = dto.shopServiceHours;
     }
+    if (dto.themeBrandColor !== undefined) {
+      patch[SETTING_KEYS.themeBrandColor] = dto.themeBrandColor;
+    }
     await this.svc.update(patch);
     return this.svc.getPublicSettings();
   }

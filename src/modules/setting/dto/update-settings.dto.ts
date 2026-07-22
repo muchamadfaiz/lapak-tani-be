@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateSettingsDto {
   @ApiPropertyOptional({
@@ -98,4 +104,19 @@ export class UpdateSettingsDto {
   @IsString()
   @MaxLength(80)
   shopServiceHours?: string;
+
+  @ApiPropertyOptional({
+    example: '#1f8a38',
+    description:
+      'Warna merek, hex 6 digit. Tangga 50–950 diturunkan frontend. ' +
+      'Kosongkan untuk kembali ke warna bawaan.',
+  })
+  @IsOptional()
+  @IsString()
+  // Longgar di sini (boleh string kosong = reset); bentuk hex-nya divalidasi
+  // lagi saat dibaca, jadi nilai ngawur tak pernah sampai ke tampilan.
+  @Matches(/^(#[0-9a-fA-F]{6})?$/, {
+    message: 'Warna merek harus hex 6 digit, mis. #1f8a38',
+  })
+  themeBrandColor?: string;
 }

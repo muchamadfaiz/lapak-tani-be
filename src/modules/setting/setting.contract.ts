@@ -14,6 +14,8 @@ export const SETTING_KEYS = {
   shopLogoUrl: 'shop_logo_url',
   shopWhatsapp: 'shop_whatsapp',
   shopServiceHours: 'shop_service_hours',
+  // Tema: satu warna merek, tangga 50-950 diturunkan di frontend.
+  themeBrandColor: 'theme_brand_color',
 } as const;
 
 /**
@@ -56,12 +58,24 @@ export interface PublicPaymentSettings {
 }
 
 /**
- * Semua pengaturan yang boleh dilihat publik: pembayaran + bilah promo.
- * Superset dari PublicPaymentSettings agar pemakai lama tidak berubah.
+ * Tema. Admin hanya memilih SATU warna; tangga 50-950 diturunkan frontend
+ * dengan terang-gelap dipatok, sehingga kontras teks tak bisa dirusak dari
+ * dashboard. Kosong = pakai warna bawaan.
+ */
+export interface ThemeSettings {
+  /** Hex 6 digit berawalan '#', mis. '#1f8a38'. */
+  brandColor: string;
+}
+
+/**
+ * Semua pengaturan yang boleh dilihat publik: pembayaran, bilah promo,
+ * identitas toko, dan tema. Superset dari PublicPaymentSettings agar pemakai
+ * lama tidak berubah.
  */
 export interface PublicSettings extends PublicPaymentSettings {
   promoBar: PromoBarSettings;
   shop: ShopIdentity;
+  theme: ThemeSettings;
 }
 
 /**
