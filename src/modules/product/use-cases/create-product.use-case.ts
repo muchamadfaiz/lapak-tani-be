@@ -40,7 +40,7 @@ export class CreateProductUseCase {
     // Ambil ulang agar outletStocks terisi di response.
     const fresh = await this.productRepository.findById(product.id);
     return ProductMapper.toAdminResponseDto(
-      fresh!,
+      fresh,
       await this.outletContract.findWarehouseIds(),
     );
   }

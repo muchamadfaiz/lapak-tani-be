@@ -45,7 +45,10 @@ export class CreateProductDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: 78000, description: 'Harga jual (Rupiah, tanpa desimal)' })
+  @ApiProperty({
+    example: 78000,
+    description: 'Harga jual (Rupiah, tanpa desimal)',
+  })
   @IsInt()
   @Min(0)
   @Max(MAX_AMOUNT, { message: 'Harga jual terlalu besar (maks 2.000.000.000)' })
@@ -55,7 +58,9 @@ export class CreateProductDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  @Max(MAX_AMOUNT, { message: 'Harga modal terlalu besar (maks 2.000.000.000)' })
+  @Max(MAX_AMOUNT, {
+    message: 'Harga modal terlalu besar (maks 2.000.000.000)',
+  })
   costPrice?: number;
 
   @ApiPropertyOptional({
@@ -69,7 +74,9 @@ export class CreateProductDto {
   @ValidateIf((o: CreateProductDto) => o.originalPrice !== null)
   @IsInt()
   @Min(0)
-  @Max(MAX_AMOUNT, { message: 'Harga coret terlalu besar (maks 2.000.000.000)' })
+  @Max(MAX_AMOUNT, {
+    message: 'Harga coret terlalu besar (maks 2.000.000.000)',
+  })
   originalPrice?: number | null;
 
   @ApiPropertyOptional({
@@ -84,12 +91,17 @@ export class CreateProductDto {
   @MaxLength(24, { each: true, message: 'Setiap tag maksimal 24 karakter' })
   tags?: string[];
 
-  @ApiPropertyOptional({ example: 'kg', description: 'Satuan (kg, gram, pcs, ikat, dll)' })
+  @ApiPropertyOptional({
+    example: 'kg',
+    description: 'Satuan (kg, gram, pcs, ikat, dll)',
+  })
   @IsOptional()
   @IsString()
   unit?: string;
 
-  @ApiPropertyOptional({ description: 'Kode barcode/SKU untuk scan cepat di kasir' })
+  @ApiPropertyOptional({
+    description: 'Kode barcode/SKU untuk scan cepat di kasir',
+  })
   @IsOptional()
   @IsString()
   barcode?: string;
@@ -118,14 +130,18 @@ export class CreateProductDto {
   @IsBoolean()
   isAvailable?: boolean;
 
-  @ApiPropertyOptional({ default: false, description: 'Jadikan Produk Pilihan' })
+  @ApiPropertyOptional({
+    default: false,
+    description: 'Jadikan Produk Pilihan',
+  })
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
 
   @ApiPropertyOptional({
     default: false,
-    description: 'Produk timbangan — dijual per berat (mis. per kg), qty boleh desimal',
+    description:
+      'Produk timbangan — dijual per berat (mis. per kg), qty boleh desimal',
   })
   @IsOptional()
   @IsBoolean()

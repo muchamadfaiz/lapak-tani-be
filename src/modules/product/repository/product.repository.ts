@@ -136,7 +136,10 @@ export class ProductRepository {
     ]);
   }
 
-  update(id: string, data: Prisma.ProductUpdateInput): Promise<ProductWithStocks> {
+  update(
+    id: string,
+    data: Prisma.ProductUpdateInput,
+  ): Promise<ProductWithStocks> {
     return this.prisma.product.update({
       where: { id },
       data,
@@ -163,7 +166,9 @@ export class ProductRepository {
     items: { productId: string; quantity: number }[],
   ): Promise<void> {
     // Urutkan by productId agar lock order konsisten antar-transaksi (anti-deadlock).
-    const ordered = [...items].sort((a, b) => a.productId.localeCompare(b.productId));
+    const ordered = [...items].sort((a, b) =>
+      a.productId.localeCompare(b.productId),
+    );
     await this.prisma.$transaction(async (tx) => {
       for (const it of ordered) {
         const res = await tx.productOutlet.updateMany({
@@ -191,7 +196,9 @@ export class ProductRepository {
     outletId: string,
     items: { productId: string; quantity: number }[],
   ): Promise<void> {
-    const ordered = [...items].sort((a, b) => a.productId.localeCompare(b.productId));
+    const ordered = [...items].sort((a, b) =>
+      a.productId.localeCompare(b.productId),
+    );
     await this.prisma.$transaction(
       ordered.map((it) =>
         this.prisma.productOutlet.upsert({
@@ -208,7 +215,9 @@ export class ProductRepository {
     outletId: string,
     items: { productId: string; quantity: number }[],
   ): Promise<void> {
-    const ordered = [...items].sort((a, b) => a.productId.localeCompare(b.productId));
+    const ordered = [...items].sort((a, b) =>
+      a.productId.localeCompare(b.productId),
+    );
     await this.prisma.$transaction(
       ordered.map((it) =>
         this.prisma.productOutlet.updateMany({

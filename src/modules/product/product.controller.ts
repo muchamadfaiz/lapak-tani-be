@@ -47,7 +47,8 @@ export class ProductController {
   @Public()
   @Get()
   @ApiOperation({
-    summary: 'List produk (publik). Filter: outletId, categoryId, search, available',
+    summary:
+      'List produk (publik). Filter: outletId, categoryId, search, available',
   })
   @ApiResponse({ status: 200, description: 'Daftar produk' })
   @ResponseMessage('Success get products')
@@ -58,8 +59,13 @@ export class ProductController {
   @ApiBearerAuth()
   @Roles('ADMIN')
   @Get('stock-levels')
-  @ApiOperation({ summary: 'Matriks sisa stok produk × outlet (Sisa Stok admin)' })
-  @ApiResponse({ status: 200, description: 'Daftar stok per produk per outlet' })
+  @ApiOperation({
+    summary: 'Matriks sisa stok produk × outlet (Sisa Stok admin)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daftar stok per produk per outlet',
+  })
   @ResponseMessage('Success get stock levels')
   findStockLevels() {
     return this.findStockLevelsUseCase.execute();
@@ -70,7 +76,10 @@ export class ProductController {
   @Get(':id/manage')
   @ApiOperation({ summary: 'Detail produk untuk admin (termasuk harga modal)' })
   @ApiParam({ name: 'id', description: 'Product UUID' })
-  @ApiResponse({ status: 200, description: 'Produk ditemukan (dengan costPrice)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Produk ditemukan (dengan costPrice)',
+  })
   @ResponseMessage('Success get product')
   findByIdAdmin(@Param('id') id: string) {
     return this.findProductByIdUseCase.execute(id, true);

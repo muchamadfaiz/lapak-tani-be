@@ -11,12 +11,14 @@ export class ProductMapper {
    * supaya storefront tak pernah menampilkan diskon 0% atau negatif.
    */
   private static isPromo(product: ProductWithStocks): boolean {
-    return product.originalPrice !== null && product.originalPrice > product.price;
+    return (
+      product.originalPrice !== null && product.originalPrice > product.price
+    );
   }
 
   private static discountPercent(product: ProductWithStocks): number | null {
     if (!ProductMapper.isPromo(product)) return null;
-    const original = product.originalPrice!;
+    const original = product.originalPrice;
     return Math.round(((original - product.price) / original) * 100);
   }
 
@@ -56,7 +58,9 @@ export class ProductMapper {
       name: product.name,
       description: product.description,
       price: product.price,
-      originalPrice: ProductMapper.isPromo(product) ? product.originalPrice : null,
+      originalPrice: ProductMapper.isPromo(product)
+        ? product.originalPrice
+        : null,
       tags: product.tags,
       discountPercent: ProductMapper.discountPercent(product),
       isPromo: ProductMapper.isPromo(product),

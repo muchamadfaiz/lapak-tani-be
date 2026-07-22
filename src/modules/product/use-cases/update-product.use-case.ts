@@ -14,7 +14,10 @@ export class UpdateProductUseCase {
     private readonly outletContract: OutletContract,
   ) {}
 
-  async execute(id: string, dto: UpdateProductDto): Promise<ProductResponseDto> {
+  async execute(
+    id: string,
+    dto: UpdateProductDto,
+  ): Promise<ProductResponseDto> {
     const existing = await this.productRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Product not found');
@@ -31,7 +34,9 @@ export class UpdateProductUseCase {
     // sah, jadi keduanya diambil dari dto bila ada, kalau tidak dari data lama.
     const nextPrice = dto.price ?? existing.price;
     const nextOriginalPrice =
-      dto.originalPrice !== undefined ? dto.originalPrice : existing.originalPrice;
+      dto.originalPrice !== undefined
+        ? dto.originalPrice
+        : existing.originalPrice;
     assertOriginalPriceAbovePrice(nextOriginalPrice, nextPrice);
 
     await this.productRepository.update(id, {
@@ -39,7 +44,9 @@ export class UpdateProductUseCase {
       ...(dto.description !== undefined && { description: dto.description }),
       ...(dto.price !== undefined && { price: dto.price }),
       ...(dto.costPrice !== undefined && { costPrice: dto.costPrice }),
-      ...(dto.originalPrice !== undefined && { originalPrice: dto.originalPrice }),
+      ...(dto.originalPrice !== undefined && {
+        originalPrice: dto.originalPrice,
+      }),
       ...(dto.tags !== undefined && { tags: dto.tags }),
       ...(dto.unit !== undefined && { unit: dto.unit }),
       ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
@@ -53,7 +60,7 @@ export class UpdateProductUseCase {
     // Ambil ulang agar stok terbaru & outletStocks terisi di response.
     const fresh = await this.productRepository.findById(id);
     return ProductMapper.toAdminResponseDto(
-      fresh!,
+      fresh,
       await this.outletContract.findWarehouseIds(),
     );
   }

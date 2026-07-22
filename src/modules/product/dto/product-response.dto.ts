@@ -21,7 +21,11 @@ export class ProductResponseDto {
   @ApiProperty({ example: 78000 })
   price: number;
 
-  @ApiPropertyOptional({ nullable: true, example: 65000, description: 'Harga modal (internal, hanya untuk admin)' })
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 65000,
+    description: 'Harga modal (internal, hanya untuk admin)',
+  })
   costPrice?: number | null;
 
   @ApiProperty({
@@ -41,12 +45,14 @@ export class ProductResponseDto {
   @ApiProperty({
     example: 8,
     nullable: true,
-    description: 'Persen diskon dibulatkan. TURUNAN dari originalPrice; null bila tidak promo.',
+    description:
+      'Persen diskon dibulatkan. TURUNAN dari originalPrice; null bila tidak promo.',
   })
   discountPercent: number | null;
 
   @ApiProperty({
-    description: 'TURUNAN: true bila originalPrice terisi dan lebih besar dari price.',
+    description:
+      'TURUNAN: true bila originalPrice terisi dan lebih besar dari price.',
   })
   isPromo: boolean;
 
@@ -85,7 +91,9 @@ export class ProductResponseDto {
   @ApiProperty({ description: 'Produk unggulan (Produk Pilihan)' })
   isFeatured: boolean;
 
-  @ApiProperty({ description: 'Produk timbangan (dijual per berat, qty desimal)' })
+  @ApiProperty({
+    description: 'Produk timbangan (dijual per berat, qty desimal)',
+  })
   soldByWeight: boolean;
 
   @ApiProperty()

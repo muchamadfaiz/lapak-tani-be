@@ -25,7 +25,10 @@ export class ProductService extends ProductContract {
     return products.map((p) => ProductService.toRef(p));
   }
 
-  getStock(outletId: string, productIds: string[]): Promise<Map<string, number>> {
+  getStock(
+    outletId: string,
+    productIds: string[],
+  ): Promise<Map<string, number>> {
     return this.productRepository.getStockForOutlet(outletId, productIds);
   }
 
