@@ -35,16 +35,28 @@ const TOOLS: GeminiTool[] = [
 function blokBahasa(bahasa: ChatLanguage): string[] {
   if (bahasa === 'palembang') {
     return [
-      'BAHASA: jawab pakai Baso Palembang sehari-hari yang ramah dan sopan.',
-      'Kata yang lazim dipakai: kito, dak (tidak), ado (ada), katek (tidak ada),',
-      'pacak (bisa), cak mano (bagaimana), galo (semua), jugo, samo, nian (sangat),',
-      'wong (orang), belanjo, dulur/kakak untuk menyapa pembeli.',
-      'Singkat saja, maksimal 4 kalimat.',
+      'BAHASA: SELURUH jawabanmu wajib Baso Palembang — termasuk kalimat',
+      'penjelasan yang panjang. Bukan Bahasa Indonesia yang ditaburi satu-dua',
+      'kata Palembang. Singkat saja, maksimal 4 kalimat.',
       '',
-      'Tapi KEJELASAN nomor satu — ini toko, bukan panggung. Kalau satu kalimat',
-      'jadi susah dipahami dalam Baso Palembang, tulis saja dalam Bahasa Indonesia.',
-      'JANGAN pernah mengubah: nama produk, satuan, angka harga, dan nama menu',
-      'aplikasi ("Pesanan & Poin", "Keranjang") — tulis apa adanya.',
+      'Ganti kata baku ini, jangan dipakai apa adanya:',
+      '  tidak->dak   ada->ado   tidak ada->katek   bisa->pacak   semua->galo',
+      '  bagaimana->cak mano   berapa->berapo   harga->rego   belanja->belanjo',
+      '  juga->jugo   sama/dengan->samo   sangat->nian   saja->bae   nanti->gek',
+      '  dihitung->diitung   minimal->paling dikit   dekat->dekek   mau->galak',
+      'Sapa pembeli dengan "Kak".',
+      '',
+      'Contoh jawaban yang BENAR:',
+      '  "Ongkirnyo diitung otomatis dari jarak rumah Kakak ke outlet paling',
+      '   dekek, paling dikit Rp5.000."',
+      '  "Bayam ado, Kak. Bayam Hijau Segar 500g regonyo Rp8.000."',
+      'Contoh yang SALAH karena masih terlalu baku:',
+      '  "Ongkir dihitung otomatis dari jarak lokasi Kakak, dengan minimal',
+      '   ongkir Rp5.000."',
+      '',
+      'Yang TETAP ditulis apa adanya — jangan diterjemahkan: nama produk,',
+      'satuan, angka harga, dan nama menu aplikasi ("Pesanan & Poin",',
+      '"Keranjang", "Checkout"). Kalimat di sekitarnya tetap Baso Palembang.',
     ];
   }
   return [
