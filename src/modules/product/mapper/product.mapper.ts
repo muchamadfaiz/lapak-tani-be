@@ -1,7 +1,30 @@
 import { ProductResponseDto } from '../dto';
 import { ProductWithStocks } from '../repository/product.repository';
 
+/** Produk dianggap "baru" selama 14 hari sejak dibuat. */
+const NEW_PRODUCT_DAYS = 14;
+
 export class ProductMapper {
+  /**
+   * Promo hanya dianggap sah bila originalPrice benar-benar DI ATAS harga jual.
+   * Data lama/aneh (originalPrice <= price) diperlakukan sebagai bukan promo,
+   * supaya storefront tak pernah menampilkan diskon 0% atau negatif.
+   */
+  private static isPromo(product: ProductWithStocks): boolean {
+    return product.originalPrice !== null && product.originalPrice > product.price;
+  }
+
+  private static discountPercent(product: ProductWithStocks): number | null {
+    if (!ProductMapper.isPromo(product)) return null;
+    const original = product.originalPrice!;
+    return Math.round(((original - product.price) / original) * 100);
+  }
+
+  private static isNew(product: ProductWithStocks): boolean {
+    const ageMs = Date.now() - product.createdAt.getTime();
+    return ageMs < NEW_PRODUCT_DAYS * 24 * 60 * 60 * 1000;
+  }
+
   /**
    * Stok yang ditampilkan: outlet tertentu bila diberi, jika tidak TOTAL STOK
    * JUAL — yaitu jumlah stok seluruh outlet TANPA gudang. Stok gudang belum bisa
@@ -33,6 +56,11 @@ export class ProductMapper {
       name: product.name,
       description: product.description,
       price: product.price,
+      originalPrice: ProductMapper.isPromo(product) ? product.originalPrice : null,
+      tags: product.tags,
+      discountPercent: ProductMapper.discountPercent(product),
+      isPromo: ProductMapper.isPromo(product),
+      isNew: ProductMapper.isNew(product),
       unit: product.unit,
       barcode: product.barcode,
       imageUrl: product.imageUrl,

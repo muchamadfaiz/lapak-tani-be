@@ -4,6 +4,7 @@ import { OutletContract } from '../../outlet';
 import { ProductRepository } from '../repository/product.repository';
 import { CreateProductDto, ProductResponseDto } from '../dto';
 import { ProductMapper } from '../mapper/product.mapper';
+import { assertOriginalPriceAbovePrice } from '../product.util';
 
 @Injectable()
 export class CreateProductUseCase {
@@ -17,11 +18,15 @@ export class CreateProductUseCase {
     // Validasi referensi lintas-modul lewat contract (bukan FK DB).
     await this.categoryContract.assertExists(dto.categoryId);
 
+    assertOriginalPriceAbovePrice(dto.originalPrice, dto.price);
+
     const product = await this.productRepository.create({
       name: dto.name,
       description: dto.description,
       price: dto.price,
       costPrice: dto.costPrice,
+      originalPrice: dto.originalPrice ?? null,
+      tags: dto.tags ?? [],
       unit: dto.unit,
       imageUrl: dto.imageUrl,
       categoryId: dto.categoryId,

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsInt,
@@ -8,8 +9,10 @@ import {
   IsString,
   IsUUID,
   Max,
+  MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -54,6 +57,32 @@ export class CreateProductDto {
   @Min(0)
   @Max(MAX_AMOUNT, { message: 'Harga modal terlalu besar (maks 2.000.000.000)' })
   costPrice?: number;
+
+  @ApiPropertyOptional({
+    example: 85000,
+    nullable: true,
+    description:
+      'Harga sebelum diskon (tampil tercoret). Harus lebih besar dari harga jual. ' +
+      'Kirim null untuk mengakhiri promo.',
+  })
+  @IsOptional()
+  @ValidateIf((o: CreateProductDto) => o.originalPrice !== null)
+  @IsInt()
+  @Min(0)
+  @Max(MAX_AMOUNT, { message: 'Harga coret terlalu besar (maks 2.000.000.000)' })
+  originalPrice?: number | null;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Organik', 'Manis'],
+    description: 'Label kosmetik di kartu produk (maks 5).',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5, { message: 'Maksimal 5 tag' })
+  @IsString({ each: true })
+  @MaxLength(24, { each: true, message: 'Setiap tag maksimal 24 karakter' })
+  tags?: string[];
 
   @ApiPropertyOptional({ example: 'kg', description: 'Satuan (kg, gram, pcs, ikat, dll)' })
   @IsOptional()

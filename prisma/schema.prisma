@@ -47,6 +47,15 @@ model Product {
   description String?  @db.Text
   price       Int // Rupiah (tanpa desimal) — harga JUAL (per satuan / per kg)
   costPrice   Int? // Rupiah — harga modal (opsional, internal)
+
+  // Harga sebelum diskon, untuk ditampilkan tercoret di storefront.
+  // null = produk tidak sedang promo. HARUS > price bila diisi.
+  // Catatan: `price` tetap harga jual sebenarnya — kolom ini murni tampilan,
+  // jadi alur keranjang/order/POS tidak perlu menghitung "harga efektif".
+  originalPrice Int?
+
+  // Label kosmetik di kartu produk, mis. ["Organik", "Manis"].
+  tags        String[] @default([])
   unit        String? // satuan: kg, gram, pcs, ikat, dll
   // Produk timbangan: dijual per berat (mis. per kg), qty boleh desimal (0,5 kg).
   soldByWeight Boolean @default(false)

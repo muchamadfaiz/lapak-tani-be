@@ -24,6 +24,37 @@ export class ProductResponseDto {
   @ApiPropertyOptional({ nullable: true, example: 65000, description: 'Harga modal (internal, hanya untuk admin)' })
   costPrice?: number | null;
 
+  @ApiProperty({
+    nullable: true,
+    example: 85000,
+    description: 'Harga sebelum diskon (tampil tercoret). null = tidak promo.',
+  })
+  originalPrice: number | null;
+
+  @ApiProperty({
+    type: [String],
+    example: ['Organik', 'Manis'],
+    description: 'Label kosmetik di kartu produk.',
+  })
+  tags: string[];
+
+  @ApiProperty({
+    example: 8,
+    nullable: true,
+    description: 'Persen diskon dibulatkan. TURUNAN dari originalPrice; null bila tidak promo.',
+  })
+  discountPercent: number | null;
+
+  @ApiProperty({
+    description: 'TURUNAN: true bila originalPrice terisi dan lebih besar dari price.',
+  })
+  isPromo: boolean;
+
+  @ApiProperty({
+    description: 'TURUNAN: true bila produk dibuat dalam 14 hari terakhir.',
+  })
+  isNew: boolean;
+
   @ApiProperty({ nullable: true, example: 'kg' })
   unit: string | null;
 

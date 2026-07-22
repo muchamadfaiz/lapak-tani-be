@@ -4,6 +4,7 @@ import { OutletContract } from '../../outlet';
 import { ProductRepository } from '../repository/product.repository';
 import { UpdateProductDto, ProductResponseDto } from '../dto';
 import { ProductMapper } from '../mapper/product.mapper';
+import { assertOriginalPriceAbovePrice } from '../product.util';
 
 @Injectable()
 export class UpdateProductUseCase {
@@ -25,11 +26,21 @@ export class UpdateProductUseCase {
     // Catatan: stok TIDAK lagi diubah dari form produk. Perubahan stok hanya
     // lewat menu Stok (pengadaan/kiriman/koreksi) agar tercatat di buku besar.
 
+    // Update parsial: bandingkan nilai SETELAH perubahan. Menaikkan harga jual
+    // saja (tanpa menyentuh harga coret) juga bisa membuat pasangan ini tak
+    // sah, jadi keduanya diambil dari dto bila ada, kalau tidak dari data lama.
+    const nextPrice = dto.price ?? existing.price;
+    const nextOriginalPrice =
+      dto.originalPrice !== undefined ? dto.originalPrice : existing.originalPrice;
+    assertOriginalPriceAbovePrice(nextOriginalPrice, nextPrice);
+
     await this.productRepository.update(id, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.description !== undefined && { description: dto.description }),
       ...(dto.price !== undefined && { price: dto.price }),
       ...(dto.costPrice !== undefined && { costPrice: dto.costPrice }),
+      ...(dto.originalPrice !== undefined && { originalPrice: dto.originalPrice }),
+      ...(dto.tags !== undefined && { tags: dto.tags }),
       ...(dto.unit !== undefined && { unit: dto.unit }),
       ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
       ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
