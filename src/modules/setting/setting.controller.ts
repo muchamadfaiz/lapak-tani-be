@@ -2,7 +2,7 @@ import { Body, Controller, Get, Patch } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public, ResponseMessage, Roles } from '../../common';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
-import { SETTING_KEYS, PublicPaymentSettings } from './setting.contract';
+import { SETTING_KEYS, PublicSettings } from './setting.contract';
 import { SettingService } from './setting.service';
 
 @ApiTags('Settings')
@@ -13,26 +13,26 @@ export class SettingController {
   @Public()
   @Get('public')
   @ApiOperation({
-    summary: 'Pengaturan pembayaran untuk pelanggan (storefront & app)',
+    summary: 'Pengaturan pembayaran & bilah promo untuk pelanggan (storefront & app)',
   })
   @ResponseMessage('Success get public settings')
-  getPublic(): Promise<PublicPaymentSettings> {
-    return this.svc.getPublicPaymentSettings();
+  getPublic(): Promise<PublicSettings> {
+    return this.svc.getPublicSettings();
   }
 
   @Roles('ADMIN')
   @Get()
   @ApiOperation({ summary: 'Semua pengaturan (Admin)' })
   @ResponseMessage('Success get settings')
-  getAll(): Promise<PublicPaymentSettings> {
-    return this.svc.getPublicPaymentSettings();
+  getAll(): Promise<PublicSettings> {
+    return this.svc.getPublicSettings();
   }
 
   @Roles('ADMIN')
   @Patch()
   @ApiOperation({ summary: 'Ubah pengaturan (Admin)' })
   @ResponseMessage('Success update settings')
-  async update(@Body() dto: UpdateSettingsDto): Promise<PublicPaymentSettings> {
+  async update(@Body() dto: UpdateSettingsDto): Promise<PublicSettings> {
     const patch: Record<string, string> = {};
     if (dto.onlinePaymentEnabled !== undefined) {
       patch[SETTING_KEYS.onlinePaymentEnabled] = String(dto.onlinePaymentEnabled);
@@ -44,7 +44,16 @@ export class SettingController {
     if (dto.bankAccountName !== undefined) {
       patch[SETTING_KEYS.bankAccountName] = dto.bankAccountName;
     }
+    if (dto.promoBarEnabled !== undefined) {
+      patch[SETTING_KEYS.promoBarEnabled] = String(dto.promoBarEnabled);
+    }
+    if (dto.promoBarTitle !== undefined) {
+      patch[SETTING_KEYS.promoBarTitle] = dto.promoBarTitle;
+    }
+    if (dto.promoBarSubtitle !== undefined) {
+      patch[SETTING_KEYS.promoBarSubtitle] = dto.promoBarSubtitle;
+    }
     await this.svc.update(patch);
-    return this.svc.getPublicPaymentSettings();
+    return this.svc.getPublicSettings();
   }
 }

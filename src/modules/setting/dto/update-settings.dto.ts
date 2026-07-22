@@ -27,4 +27,29 @@ export class UpdateSettingsDto {
   @IsString()
   @MaxLength(100)
   bankAccountName?: string;
+
+  // ── Bilah promo mengambang di beranda storefront ──
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Tampilkan bilah promo di beranda. Judul kosong tetap dianggap mati.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  promoBarEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'Diskon 20% hingga 50RB',
+    description: 'Baris utama bilah promo. Ruangnya sempit — jaga tetap pendek.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  promoBarTitle?: string;
+
+  @ApiPropertyOptional({ example: 'Belanja 75RB untuk klaim vouchernya' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  promoBarSubtitle?: string;
 }

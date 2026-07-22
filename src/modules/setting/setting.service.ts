@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { SettingRepository } from './repository/setting.repository';
 import {
   PublicPaymentSettings,
+  PublicSettings,
   SETTING_KEYS,
   SettingContract,
 } from './setting.contract';
@@ -12,6 +13,11 @@ const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.bankName]: '',
   [SETTING_KEYS.bankAccountNumber]: '',
   [SETTING_KEYS.bankAccountName]: '',
+  // Bilah promo default MATI — jangan pernah menayangkan klaim diskon yang
+  // belum pernah diisi admin.
+  [SETTING_KEYS.promoBarEnabled]: 'false',
+  [SETTING_KEYS.promoBarTitle]: '',
+  [SETTING_KEYS.promoBarSubtitle]: '',
 };
 
 @Injectable()
@@ -52,6 +58,22 @@ export class SettingService extends SettingContract {
       bankName: all[SETTING_KEYS.bankName],
       bankAccountNumber: all[SETTING_KEYS.bankAccountNumber],
       bankAccountName: all[SETTING_KEYS.bankAccountName],
+    };
+  }
+
+  /** Pembayaran + bilah promo, untuk storefront & halaman pengaturan admin. */
+  async getPublicSettings(): Promise<PublicSettings> {
+    const all = await this.getAll();
+    const title = all[SETTING_KEYS.promoBarTitle].trim();
+    return {
+      ...(await this.getPublicPaymentSettings()),
+      promoBar: {
+        // Judul kosong = tak ada yang bisa ditampilkan, jadi anggap mati
+        // walau saklarnya menyala. Storefront tak perlu memeriksa dua hal.
+        enabled: all[SETTING_KEYS.promoBarEnabled] === 'true' && title.length > 0,
+        title,
+        subtitle: all[SETTING_KEYS.promoBarSubtitle].trim(),
+      },
     };
   }
 }
