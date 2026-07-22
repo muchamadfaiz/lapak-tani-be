@@ -13,7 +13,8 @@ export class SettingController {
   @Public()
   @Get('public')
   @ApiOperation({
-    summary: 'Pengaturan pembayaran & bilah promo untuk pelanggan (storefront & app)',
+    summary:
+      'Pengaturan pembayaran & bilah promo untuk pelanggan (storefront & app)',
   })
   @ResponseMessage('Success get public settings')
   getPublic(): Promise<PublicSettings> {
@@ -35,7 +36,9 @@ export class SettingController {
   async update(@Body() dto: UpdateSettingsDto): Promise<PublicSettings> {
     const patch: Record<string, string> = {};
     if (dto.onlinePaymentEnabled !== undefined) {
-      patch[SETTING_KEYS.onlinePaymentEnabled] = String(dto.onlinePaymentEnabled);
+      patch[SETTING_KEYS.onlinePaymentEnabled] = String(
+        dto.onlinePaymentEnabled,
+      );
     }
     if (dto.bankName !== undefined) patch[SETTING_KEYS.bankName] = dto.bankName;
     if (dto.bankAccountNumber !== undefined) {
@@ -52,6 +55,19 @@ export class SettingController {
     }
     if (dto.promoBarSubtitle !== undefined) {
       patch[SETTING_KEYS.promoBarSubtitle] = dto.promoBarSubtitle;
+    }
+    if (dto.shopName !== undefined) patch[SETTING_KEYS.shopName] = dto.shopName;
+    if (dto.shopTagline !== undefined) {
+      patch[SETTING_KEYS.shopTagline] = dto.shopTagline;
+    }
+    if (dto.shopLogoUrl !== undefined) {
+      patch[SETTING_KEYS.shopLogoUrl] = dto.shopLogoUrl;
+    }
+    if (dto.shopWhatsapp !== undefined) {
+      patch[SETTING_KEYS.shopWhatsapp] = dto.shopWhatsapp;
+    }
+    if (dto.shopServiceHours !== undefined) {
+      patch[SETTING_KEYS.shopServiceHours] = dto.shopServiceHours;
     }
     await this.svc.update(patch);
     return this.svc.getPublicSettings();

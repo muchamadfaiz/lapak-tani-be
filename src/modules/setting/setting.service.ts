@@ -18,6 +18,14 @@ const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.promoBarEnabled]: 'false',
   [SETTING_KEYS.promoBarTitle]: '',
   [SETTING_KEYS.promoBarSubtitle]: '',
+  // Identitas: kosong = frontend memakai bawaannya sendiri. Nomor WhatsApp
+  // mengambil env yang sudah dipakai modul Order agar keduanya tidak berbeda
+  // sebelum admin pernah menyimpan apa pun.
+  [SETTING_KEYS.shopName]: '',
+  [SETTING_KEYS.shopTagline]: '',
+  [SETTING_KEYS.shopLogoUrl]: '',
+  [SETTING_KEYS.shopWhatsapp]: process.env.WHATSAPP_ADMIN_NUMBER || '',
+  [SETTING_KEYS.shopServiceHours]: '',
 };
 
 @Injectable()
@@ -70,9 +78,19 @@ export class SettingService extends SettingContract {
       promoBar: {
         // Judul kosong = tak ada yang bisa ditampilkan, jadi anggap mati
         // walau saklarnya menyala. Storefront tak perlu memeriksa dua hal.
-        enabled: all[SETTING_KEYS.promoBarEnabled] === 'true' && title.length > 0,
+        enabled:
+          all[SETTING_KEYS.promoBarEnabled] === 'true' && title.length > 0,
         title,
         subtitle: all[SETTING_KEYS.promoBarSubtitle].trim(),
+      },
+      shop: {
+        name: all[SETTING_KEYS.shopName].trim(),
+        tagline: all[SETTING_KEYS.shopTagline].trim(),
+        logoUrl: all[SETTING_KEYS.shopLogoUrl].trim(),
+        // Buang selain angka: admin sering mengetik "+62 858-…" atau spasi,
+        // sedangkan tautan wa.me hanya menerima digit.
+        whatsapp: all[SETTING_KEYS.shopWhatsapp].replace(/\D/g, ''),
+        serviceHours: all[SETTING_KEYS.shopServiceHours].trim(),
       },
     };
   }

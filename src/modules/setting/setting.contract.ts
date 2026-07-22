@@ -8,7 +8,30 @@ export const SETTING_KEYS = {
   promoBarEnabled: 'promo_bar_enabled',
   promoBarTitle: 'promo_bar_title',
   promoBarSubtitle: 'promo_bar_subtitle',
+  // Identitas toko — dipakai storefront (logo, nama, tautan WhatsApp).
+  shopName: 'shop_name',
+  shopTagline: 'shop_tagline',
+  shopLogoUrl: 'shop_logo_url',
+  shopWhatsapp: 'shop_whatsapp',
+  shopServiceHours: 'shop_service_hours',
 } as const;
+
+/**
+ * Identitas toko. Sebelumnya tersebar sebagai konstanta di banyak berkas —
+ * nomor WhatsApp saja ditulis mati di 5 file frontend, sehingga sekali ganti
+ * nomor ada enam tempat yang harus diingat.
+ *
+ * Nilai kosong berarti "pakai bawaan frontend", bukan "kosongkan tampilan".
+ */
+export interface ShopIdentity {
+  name: string;
+  tagline: string;
+  /** URL logo hasil unggah admin. Kosong = pakai logo bawaan. */
+  logoUrl: string;
+  /** Nomor WhatsApp admin, format internasional tanpa '+' (mis. 6285...). */
+  whatsapp: string;
+  serviceHours: string;
+}
 
 /**
  * Bilah promo mengambang di beranda. Teksnya dikelola admin — sengaja TIDAK
@@ -38,6 +61,7 @@ export interface PublicPaymentSettings {
  */
 export interface PublicSettings extends PublicPaymentSettings {
   promoBar: PromoBarSettings;
+  shop: ShopIdentity;
 }
 
 /**
