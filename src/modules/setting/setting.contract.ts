@@ -16,7 +16,29 @@ export const SETTING_KEYS = {
   shopServiceHours: 'shop_service_hours',
   // Tema: satu warna merek, tangga 50-950 diturunkan di frontend.
   themeBrandColor: 'theme_brand_color',
+  // Aturan bisnis: ongkir & poin. Sebelumnya konstanta yang ditulis mati di
+  // BE DAN di frontend, jadi sekali berubah ada tiga tempat yang harus ingat.
+  shippingMin: 'shipping_min',
+  shippingRateInstant: 'shipping_rate_instant',
+  shippingRateScheduled: 'shipping_rate_scheduled',
+  pointPerRupiah: 'point_per_rupiah',
 } as const;
+
+/**
+ * Aturan ongkir & poin. BE tetap satu-satunya yang MENGHITUNG dan menagih;
+ * frontend membaca nilai ini hanya untuk menampilkan, supaya angka di layar
+ * dan angka yang ditagih tak mungkin berbeda.
+ */
+export interface BusinessRules {
+  /** Ongkir minimum (Rupiah), berlaku walau jaraknya sangat dekat. */
+  shippingMin: number;
+  /** Tarif per km untuk pengiriman instan. */
+  shippingRateInstant: number;
+  /** Tarif per km untuk pengiriman terjadwal (pagi/sore). */
+  shippingRateScheduled: number;
+  /** Rupiah belanja per 1 poin. */
+  pointPerRupiah: number;
+}
 
 /**
  * Identitas toko. Sebelumnya tersebar sebagai konstanta di banyak berkas —
@@ -76,6 +98,7 @@ export interface PublicSettings extends PublicPaymentSettings {
   promoBar: PromoBarSettings;
   shop: ShopIdentity;
   theme: ThemeSettings;
+  rules: BusinessRules;
 }
 
 /**
@@ -88,4 +111,10 @@ export abstract class SettingContract {
 
   /** Pengaturan pembayaran untuk ditampilkan ke pelanggan. */
   abstract getPublicPaymentSettings(): Promise<PublicPaymentSettings>;
+
+  /**
+   * Aturan ongkir & poin. Dipakai modul Order saat menghitung tagihan, jadi
+   * modul lain tak perlu tahu bentuk penyimpanan pengaturan.
+   */
+  abstract getBusinessRules(): Promise<BusinessRules>;
 }

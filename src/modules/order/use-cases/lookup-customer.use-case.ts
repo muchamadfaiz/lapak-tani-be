@@ -23,7 +23,10 @@ export class LookupCustomerUseCase {
     private readonly otpContract: OtpContract,
   ) {}
 
-  async execute(rawPhone: string, otpToken?: string): Promise<CustomerLookupDto> {
+  async execute(
+    rawPhone: string,
+    otpToken?: string,
+  ): Promise<CustomerLookupDto> {
     const phone = normalizePhone(rawPhone || '');
     if (phone.length < 8) {
       throw new BadRequestException('Nomor HP tidak valid');
@@ -31,7 +34,9 @@ export class LookupCustomerUseCase {
 
     // Gerbang OTP (bila fitur aktif): butuh token sesi-HP yang cocok.
     if (this.otpContract.enabled) {
-      const verified = otpToken ? this.otpContract.verifyPhoneToken(otpToken) : null;
+      const verified = otpToken
+        ? this.otpContract.verifyPhoneToken(otpToken)
+        : null;
       if (!verified || verified.phone !== phone) {
         throw new ForbiddenException({
           message: 'Verifikasi OTP diperlukan',

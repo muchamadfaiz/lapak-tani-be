@@ -1,9 +1,19 @@
 import { Body, Controller, Get, Headers, Post, Query } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiHeader, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiHeader,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Public, ResponseMessage } from '../../common';
 import { CustomerLookupDto, SetPinDto, VerifyPinDto } from './dto';
-import { LookupCustomerUseCase, SetPinUseCase, VerifyPinUseCase } from './use-cases';
+import {
+  LookupCustomerUseCase,
+  SetPinUseCase,
+  VerifyPinUseCase,
+} from './use-cases';
 
 @ApiTags('Customers')
 @Controller('customers')
@@ -20,7 +30,11 @@ export class CustomerController {
     summary: 'Lihat poin & riwayat pesanan pelanggan by No HP (tanpa login)',
   })
   @ApiQuery({ name: 'phone', example: '081234567890' })
-  @ApiHeader({ name: 'x-otp-token', required: false, description: 'Token sesi HP (bila OTP aktif)' })
+  @ApiHeader({
+    name: 'x-otp-token',
+    required: false,
+    description: 'Token sesi HP (bila OTP aktif)',
+  })
   @ApiResponse({ status: 200, type: CustomerLookupDto })
   @ResponseMessage('Success lookup customer')
   lookup(
@@ -34,7 +48,11 @@ export class CustomerController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('pin')
   @ApiOperation({ summary: 'Set/ganti PIN login cepat (butuh token sesi WA)' })
-  @ApiHeader({ name: 'x-otp-token', required: true, description: 'Token sesi HP dari login WA instan' })
+  @ApiHeader({
+    name: 'x-otp-token',
+    required: true,
+    description: 'Token sesi HP dari login WA instan',
+  })
   @ResponseMessage('Success set PIN')
   setPinHandler(
     @Body() dto: SetPinDto,

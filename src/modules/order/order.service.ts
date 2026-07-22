@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ProductContract } from '../product';
 import { StockContract } from '../stock';
+import { SettingContract } from '../setting';
 import {
   OrderRepository,
   OrderWithRelations,
@@ -38,6 +39,7 @@ export class OrderService extends OrderContract {
     private readonly productContract: ProductContract,
     private readonly customerRepository: CustomerRepository,
     private readonly stockContract: StockContract,
+    private readonly settingContract: SettingContract,
   ) {
     super();
   }
@@ -49,7 +51,10 @@ export class OrderService extends OrderContract {
 
   /** Ubah status by id (dipakai admin). */
   setStatusById(orderId: string, status: string): Promise<void> {
-    return this.applyStatus(() => this.orderRepository.findById(orderId), status);
+    return this.applyStatus(
+      () => this.orderRepository.findById(orderId),
+      status,
+    );
   }
 
   /** Ubah status by orderNumber (dipakai webhook pembayaran). */
@@ -100,7 +105,10 @@ export class OrderService extends OrderContract {
       await this.customerRepository.awardPoints(
         existing.customerId,
         existing.id,
-        calcEarnedPoints(existing.total),
+        calcEarnedPoints(
+          existing.total,
+          (await this.settingContract.getBusinessRules()).pointPerRupiah,
+        ),
       );
     }
   }
@@ -134,8 +142,10 @@ export class OrderService extends OrderContract {
 
     const items = input.items.map((it) => {
       const p = map.get(it.productId);
-      if (!p) throw new BadRequestException(`Produk ${it.productId} tidak ditemukan`);
-      if (!p.isAvailable) throw new BadRequestException(`Produk "${p.name}" tidak tersedia`);
+      if (!p)
+        throw new BadRequestException(`Produk ${it.productId} tidak ditemukan`);
+      if (!p.isAvailable)
+        throw new BadRequestException(`Produk "${p.name}" tidak tersedia`);
       if ((stockMap.get(p.id) ?? 0) < it.quantity) {
         throw new BadRequestException(`Stok "${p.name}" tidak cukup`);
       }
@@ -151,7 +161,10 @@ export class OrderService extends OrderContract {
 
     const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
     // Diskon (Rupiah) dibatasi 0..subtotal. Kasir: tanpa ongkir.
-    const discount = Math.min(Math.max(0, Math.round(input.discount ?? 0)), subtotal);
+    const discount = Math.min(
+      Math.max(0, Math.round(input.discount ?? 0)),
+      subtotal,
+    );
     const total = subtotal - discount;
 
     // 2. Uang tunai wajib cukup untuk metode cash.
@@ -159,7 +172,9 @@ export class OrderService extends OrderContract {
     let changeAmount = 0;
     if (input.paymentMethod === 'cash') {
       if (input.amountPaid === undefined) {
-        throw new BadRequestException('Uang tunai (amountPaid) wajib untuk metode cash');
+        throw new BadRequestException(
+          'Uang tunai (amountPaid) wajib untuk metode cash',
+        );
       }
       if (input.amountPaid < total) {
         throw new BadRequestException('Uang tunai kurang dari total');
@@ -172,7 +187,7 @@ export class OrderService extends OrderContract {
     const hasPhone = !!input.phone;
     const customer = hasPhone
       ? await this.customerRepository.upsertByPhone(
-          normalizePhone(input.phone!),
+          normalizePhone(input.phone),
           input.customerName,
         )
       : await this.customerRepository.upsertByPhone(WALKIN_PHONE, 'Umum');
@@ -210,7 +225,16 @@ export class OrderService extends OrderContract {
       order.id,
     );
 
-    return { order, items, subtotal, total, amountPaid, changeAmount, customer, hasPhone };
+    return {
+      order,
+      items,
+      subtotal,
+      total,
+      amountPaid,
+      changeAmount,
+      customer,
+      hasPhone,
+    };
   }
 
   private toPosResult(
@@ -236,7 +260,7 @@ export class OrderService extends OrderContract {
       paymentMethod,
       amountPaid: r.amountPaid,
       changeAmount: r.changeAmount,
-      customerName: r.hasPhone ? r.customer.name : fallbackName ?? null,
+      customerName: r.hasPhone ? r.customer.name : (fallbackName ?? null),
       phone: r.hasPhone ? r.customer.phone : null,
       earnedPoints,
       createdAt: r.order.createdAt,
@@ -258,10 +282,22 @@ export class OrderService extends OrderContract {
     // Poin langsung dikreditkan (order sudah completed) — hanya bila No HP asli.
     let earnedPoints = 0;
     if (r.hasPhone) {
-      earnedPoints = calcEarnedPoints(r.total);
-      await this.customerRepository.awardPoints(r.customer.id, r.order.id, earnedPoints);
+      earnedPoints = calcEarnedPoints(
+        r.total,
+        (await this.settingContract.getBusinessRules()).pointPerRupiah,
+      );
+      await this.customerRepository.awardPoints(
+        r.customer.id,
+        r.order.id,
+        earnedPoints,
+      );
     }
-    return this.toPosResult(r, input.paymentMethod, input.customerName, earnedPoints);
+    return this.toPosResult(
+      r,
+      input.paymentMethod,
+      input.customerName,
+      earnedPoints,
+    );
   }
 
   /**
@@ -313,8 +349,10 @@ export class OrderService extends OrderContract {
       paymentMethod: o.paymentMethod ?? 'qris',
       amountPaid: o.amountPaid ?? null,
       changeAmount: 0,
-      customerName: o.customer?.phone === WALKIN_PHONE ? null : o.customer?.name ?? null,
-      phone: o.customer?.phone === WALKIN_PHONE ? null : o.customer?.phone ?? null,
+      customerName:
+        o.customer?.phone === WALKIN_PHONE ? null : (o.customer?.name ?? null),
+      phone:
+        o.customer?.phone === WALKIN_PHONE ? null : (o.customer?.phone ?? null),
       earnedPoints:
         o.customer?.phone && o.customer.phone !== WALKIN_PHONE
           ? calcEarnedPoints(o.total)
@@ -357,7 +395,7 @@ export class OrderService extends OrderContract {
     await this.customerRepository.reversePoints(o.customerId, o.id);
 
     const result = await this.getPosSaleResult(orderId);
-    return result!;
+    return result;
   }
 
   async findCustomerByPhone(

@@ -72,6 +72,14 @@ export class SettingController {
     if (dto.themeBrandColor !== undefined) {
       patch[SETTING_KEYS.themeBrandColor] = dto.themeBrandColor;
     }
+    for (const k of [
+      'shippingMin',
+      'shippingRateInstant',
+      'shippingRateScheduled',
+      'pointPerRupiah',
+    ] as const) {
+      if (dto[k] !== undefined) patch[SETTING_KEYS[k]] = String(dto[k]);
+    }
     await this.svc.update(patch);
     return this.svc.getPublicSettings();
   }

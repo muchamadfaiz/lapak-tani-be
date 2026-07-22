@@ -20,6 +20,9 @@ export class TopSellerResponseDto {
   @ApiProperty()
   isAvailable: boolean;
 
-  @ApiProperty({ example: 42, description: 'Total unit terjual (order completed)' })
+  @ApiProperty({
+    example: 42,
+    description: 'Total unit terjual (order completed)',
+  })
   soldCount: number;
 }

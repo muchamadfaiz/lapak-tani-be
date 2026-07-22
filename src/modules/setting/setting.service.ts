@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SettingRepository } from './repository/setting.repository';
 import {
+  BusinessRules,
   PublicPaymentSettings,
   PublicSettings,
   SETTING_KEYS,
@@ -28,12 +29,33 @@ const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.shopServiceHours]: '',
   // Kosong = frontend memakai palet bawaannya.
   [SETTING_KEYS.themeBrandColor]: '',
+  // Bawaan = nilai konstanta yang dulu ditulis mati, supaya perilaku tak
+  // berubah sebelum admin menyentuh apa pun.
+  [SETTING_KEYS.shippingMin]: '5000',
+  [SETTING_KEYS.shippingRateInstant]: '10000',
+  [SETTING_KEYS.shippingRateScheduled]: '2000',
+  [SETTING_KEYS.pointPerRupiah]: '1000',
 };
+
+/**
+ * Aturan bisnis dibaca SETIAP kali order dibuat. Tanpa cache, tiap checkout
+ * menambah satu query yang isinya nyaris tak pernah berubah. TTL dibuat
+ * pendek supaya perubahan admin tetap terasa cepat.
+ */
+const RULES_TTL_MS = 30_000;
 
 @Injectable()
 export class SettingService extends SettingContract {
+  private rulesCache: { nilai: BusinessRules; sampai: number } | null = null;
+
   constructor(private readonly repo: SettingRepository) {
     super();
+  }
+
+  /** Angka dari pengaturan; jatuh ke bawaan bila kosong/bukan angka wajar. */
+  private static angka(raw: string | undefined, bawaan: number): number {
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : bawaan;
   }
 
   /** Semua pengaturan (admin) — default diisi bila belum ada di DB. */
@@ -45,7 +67,34 @@ export class SettingService extends SettingContract {
   }
 
   /** Simpan sebagian pengaturan. Hanya key yang dikenal yang diterima. */
+  async getBusinessRules(): Promise<BusinessRules> {
+    if (this.rulesCache && Date.now() < this.rulesCache.sampai) {
+      return this.rulesCache.nilai;
+    }
+    const all = await this.getAll();
+    const nilai: BusinessRules = {
+      shippingMin: SettingService.angka(all[SETTING_KEYS.shippingMin], 5000),
+      shippingRateInstant: SettingService.angka(
+        all[SETTING_KEYS.shippingRateInstant],
+        10000,
+      ),
+      shippingRateScheduled: SettingService.angka(
+        all[SETTING_KEYS.shippingRateScheduled],
+        2000,
+      ),
+      // Pembagi tak boleh 0 — akan menghasilkan Infinity poin.
+      pointPerRupiah: Math.max(
+        1,
+        SettingService.angka(all[SETTING_KEYS.pointPerRupiah], 1000),
+      ),
+    };
+    this.rulesCache = { nilai, sampai: Date.now() + RULES_TTL_MS };
+    return nilai;
+  }
+
   async update(patch: Record<string, string>): Promise<Record<string, string>> {
+    // Perubahan harus langsung terasa, jangan menunggu TTL habis.
+    this.rulesCache = null;
     const known = new Set<string>(Object.values(SETTING_KEYS));
     for (const [key, value] of Object.entries(patch)) {
       if (!known.has(key)) continue; // abaikan key asing (anti-sampah)
@@ -94,6 +143,7 @@ export class SettingService extends SettingContract {
         whatsapp: all[SETTING_KEYS.shopWhatsapp].replace(/\D/g, ''),
         serviceHours: all[SETTING_KEYS.shopServiceHours].trim(),
       },
+      rules: await this.getBusinessRules(),
       theme: {
         // Hanya lolos bila hex 6 digit yang sah; selain itu dianggap kosong
         // supaya warna ngawur di DB tak sampai merusak tampilan.

@@ -19,10 +19,17 @@ export class SetPinUseCase {
     private readonly otpContract: OtpContract,
   ) {}
 
-  async execute(pin: string, otpToken?: string): Promise<{ ok: boolean; phone: string }> {
-    const verified = otpToken ? this.otpContract.verifyPhoneToken(otpToken) : null;
+  async execute(
+    pin: string,
+    otpToken?: string,
+  ): Promise<{ ok: boolean; phone: string }> {
+    const verified = otpToken
+      ? this.otpContract.verifyPhoneToken(otpToken)
+      : null;
     if (!verified) {
-      throw new ForbiddenException('Sesi tidak valid, verifikasi WhatsApp dulu');
+      throw new ForbiddenException(
+        'Sesi tidak valid, verifikasi WhatsApp dulu',
+      );
     }
     if (!/^[0-9]{6}$/.test(pin)) {
       throw new BadRequestException('PIN harus 6 angka');

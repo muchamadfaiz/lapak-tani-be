@@ -25,10 +25,18 @@ export const ONGKIR_PER_KM = DELIVERY_RATE_PER_KM.instant;
 export function calcShippingCost(
   distanceKm: number,
   option: DeliveryOption = 'instant',
+  // Tarif dari pengaturan admin. Bila tak diberi, pakai bawaan lama supaya
+  // pemanggil lama (dan uji) tetap berjalan seperti sebelumnya.
+  rules?: { shippingMin: number; rateInstant: number; rateScheduled: number },
 ): number {
-  const rate = DELIVERY_RATE_PER_KM[option] ?? DELIVERY_RATE_PER_KM.instant;
+  const rate = rules
+    ? option === 'instant'
+      ? rules.rateInstant
+      : rules.rateScheduled
+    : (DELIVERY_RATE_PER_KM[option] ?? DELIVERY_RATE_PER_KM.instant);
+  const min = rules ? rules.shippingMin : MIN_ONGKIR;
   const raw = Math.round((distanceKm * rate) / 1000) * 1000;
-  return Math.max(MIN_ONGKIR, raw);
+  return Math.max(min, raw);
 }
 
 export const ORDER_STATUSES = [
@@ -43,8 +51,10 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 /** Poin loyalty: 1 poin per Rp1.000 belanja (dari total order). */
 export const POINT_PER_RUPIAH = 1000;
-export function calcEarnedPoints(total: number): number {
-  return Math.floor(total / POINT_PER_RUPIAH);
+export function calcEarnedPoints(total: number, perRupiah?: number): number {
+  return Math.floor(
+    total / (perRupiah && perRupiah > 0 ? perRupiah : POINT_PER_RUPIAH),
+  );
 }
 
 // normalizePhone dipindah ke common (shared kernel) — dipakai juga modul OTP.

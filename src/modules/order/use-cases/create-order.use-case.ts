@@ -7,6 +7,7 @@ import { DistanceContract } from '../../distance';
 import { OutletContract } from '../../outlet';
 import { ProductContract, ProductRef } from '../../product';
 import { StockContract } from '../../stock';
+import { SettingContract } from '../../setting';
 import { NotificationContract } from '../../notification';
 import { OrderRepository } from '../repository/order.repository';
 import { CustomerRepository } from '../repository/customer.repository';
@@ -17,7 +18,6 @@ import {
   calcShippingCost,
   generateOrderNumber,
   normalizePhone,
-  MIN_ONGKIR,
 } from '../order.util';
 
 const ADMIN_WA = process.env.WHATSAPP_ADMIN_NUMBER || '6285899731884';
@@ -32,6 +32,7 @@ export class CreateOrderUseCase {
     private readonly notificationContract: NotificationContract,
     private readonly distanceContract: DistanceContract,
     private readonly stockContract: StockContract,
+    private readonly settingContract: SettingContract,
   ) {}
 
   async execute(dto: CreateOrderDto): Promise<OrderResponseDto> {
@@ -66,7 +67,9 @@ export class CreateOrderUseCase {
         throw new BadRequestException(`Produk "${p.name}" tidak tersedia`);
       }
       if ((stockMap.get(p.id) ?? 0) < item.quantity) {
-        throw new BadRequestException(`Stok "${p.name}" tidak cukup di outlet ini`);
+        throw new BadRequestException(
+          `Stok "${p.name}" tidak cukup di outlet ini`,
+        );
       }
       return {
         productId: p.id,
@@ -81,8 +84,18 @@ export class CreateOrderUseCase {
     const subtotal = items.reduce((sum, i) => sum + i.subtotal, 0);
 
     let distanceKm: number | undefined;
-    let shippingCost = MIN_ONGKIR;
     const deliveryOption = dto.deliveryOption ?? 'instant';
+    // Tarif ongkir dari pengaturan admin — BE tetap satu-satunya yang
+    // menghitung tagihan; frontend hanya menampilkan.
+    const aturan = await this.settingContract.getBusinessRules();
+    const tarif = {
+      shippingMin: aturan.shippingMin,
+      rateInstant: aturan.shippingRateInstant,
+      rateScheduled: aturan.shippingRateScheduled,
+    };
+    // Tanpa jarak (mis. klien tak mengirim lokasi), tetap kena ongkir MINIMUM
+    // — bukan gratis. Ini perilaku lama yang harus dipertahankan.
+    let shippingCost = aturan.shippingMin;
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
       const raw = await this.distanceContract.distanceKm(
         outlet.latitude,
@@ -92,11 +105,11 @@ export class CreateOrderUseCase {
       );
       distanceKm = Math.round(raw * 10) / 10;
       // Tarif tergantung opsi: instan 10rb/km, jadwal (pagi/sore) 2rb/km.
-      shippingCost = calcShippingCost(distanceKm, deliveryOption);
+      shippingCost = calcShippingCost(distanceKm, deliveryOption, tarif);
     } else if (dto.distanceKm !== undefined) {
       // App mobile mengirim jarak langsung (dihitung dari GPS di sisi klien).
       distanceKm = Math.round(dto.distanceKm * 10) / 10;
-      shippingCost = calcShippingCost(distanceKm, deliveryOption);
+      shippingCost = calcShippingCost(distanceKm, deliveryOption, tarif);
     }
     const total = subtotal + shippingCost;
 

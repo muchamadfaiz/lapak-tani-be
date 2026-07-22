@@ -51,10 +51,16 @@ export class OrderResponseDto {
   @ApiProperty()
   paymentMethod: string;
 
-  @ApiProperty({ example: 'instant', description: 'instant | scheduled_morning | scheduled_afternoon' })
+  @ApiProperty({
+    example: 'instant',
+    description: 'instant | scheduled_morning | scheduled_afternoon',
+  })
   deliveryOption: string;
 
-  @ApiProperty({ nullable: true, description: 'URL bukti transfer (bila diunggah pelanggan)' })
+  @ApiProperty({
+    nullable: true,
+    description: 'URL bukti transfer (bila diunggah pelanggan)',
+  })
   paymentProofUrl: string | null;
 
   @ApiProperty()
@@ -73,7 +79,8 @@ export class OrderResponseDto {
 
   @ApiProperty({
     nullable: true,
-    description: 'Batas waktu bayar untuk order pending (auto-cancel bila lewat)',
+    description:
+      'Batas waktu bayar untuk order pending (auto-cancel bila lewat)',
   })
   expiresAt: Date | null;
 

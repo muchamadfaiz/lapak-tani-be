@@ -85,7 +85,9 @@ export class CustomerRepository {
         where: { orderId, type: 'void' },
       });
       if (already) return; // sudah pernah ditarik
-      const customer = await tx.customer.findUnique({ where: { id: customerId } });
+      const customer = await tx.customer.findUnique({
+        where: { id: customerId },
+      });
       if (!customer) return;
       const newBalance = Math.max(0, customer.points - earned.amount);
       await tx.customer.update({

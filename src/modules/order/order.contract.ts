@@ -117,7 +117,10 @@ export abstract class OrderContract {
    * Void transaksi kasir yang sudah lunas (kembalikan stok + tarik poin). Hanya
    * untuk transaksi pada `shiftId` yang sama. Kembalikan data transaksi yang dibatalkan.
    */
-  abstract voidPosSale(orderId: string, shiftId: string): Promise<PosSaleResult>;
+  abstract voidPosSale(
+    orderId: string,
+    shiftId: string,
+  ): Promise<PosSaleResult>;
 
   /** Rekap penjualan satu sesi kasir (untuk tutup kas). */
   abstract summarizeShiftSales(shiftId: string): Promise<ShiftSalesSummary>;

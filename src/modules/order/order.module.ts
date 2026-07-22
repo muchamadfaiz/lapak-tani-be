@@ -6,6 +6,7 @@ import { OtpModule } from '../otp';
 import { DistanceModule } from '../distance';
 import { FileModule } from '../file';
 import { StockModule } from '../stock';
+import { SettingModule } from '../setting';
 import { OrderController } from './order.controller';
 import { CustomerController } from './customer.controller';
 import { TopSellerController } from './top-seller.controller';
@@ -39,6 +40,8 @@ import {
     FileModule,
     // StockContract → catat penjualan/pembatalan ke buku besar stok.
     StockModule,
+    // SettingContract → tarif ongkir & rasio poin dari pengaturan admin.
+    SettingModule,
   ],
   controllers: [OrderController, CustomerController, TopSellerController],
   providers: [

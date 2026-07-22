@@ -73,7 +73,10 @@ export class OrderController {
     summary: 'Checkout — buat order (publik/guest, wajib No HP)',
   })
   @ApiResponse({ status: 201, description: 'Order dibuat (+ whatsappUrl)' })
-  @ApiResponse({ status: 400, description: 'Validasi gagal (stok/outlet/produk)' })
+  @ApiResponse({
+    status: 400,
+    description: 'Validasi gagal (stok/outlet/produk)',
+  })
   @ResponseMessage('Success create order')
   create(@Body() dto: CreateOrderDto) {
     return this.createOrderUseCase.execute(dto);

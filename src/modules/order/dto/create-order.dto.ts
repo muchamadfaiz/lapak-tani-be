@@ -41,7 +41,10 @@ export class CreateOrderDto {
   @Type(() => OrderItemInputDto)
   items: OrderItemInputDto[];
 
-  @ApiProperty({ example: '081234567890', description: 'No HP pemesan (wajib)' })
+  @ApiProperty({
+    example: '081234567890',
+    description: 'No HP pemesan (wajib)',
+  })
   @IsString()
   @Matches(/^[0-9+]{8,16}$/, { message: 'Nomor HP tidak valid' })
   phone: string;
@@ -56,7 +59,10 @@ export class CreateOrderDto {
   @MinLength(5)
   shippingAddress: string;
 
-  @ApiProperty({ example: 'cod', description: 'Metode bayar (transfer_bca, cod, qris, dll)' })
+  @ApiProperty({
+    example: 'cod',
+    description: 'Metode bayar (transfer_bca, cod, qris, dll)',
+  })
   @IsString()
   @IsNotEmpty()
   paymentMethod: string;
@@ -64,7 +70,8 @@ export class CreateOrderDto {
   @ApiPropertyOptional({
     enum: DELIVERY_OPTIONS,
     default: 'instant',
-    description: 'Opsi pengiriman: instant (10rb/km) | scheduled_morning | scheduled_afternoon (2rb/km)',
+    description:
+      'Opsi pengiriman: instant (10rb/km) | scheduled_morning | scheduled_afternoon (2rb/km)',
   })
   @IsOptional()
   @IsIn(DELIVERY_OPTIONS)

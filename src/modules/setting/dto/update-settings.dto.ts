@@ -1,6 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsInt,
+  Max,
+  Min,
   IsOptional,
   IsString,
   Matches,
@@ -119,4 +122,43 @@ export class UpdateSettingsDto {
     message: 'Warna merek harus hex 6 digit, mis. #1f8a38',
   })
   themeBrandColor?: string;
+
+  // ── Aturan ongkir & poin ──
+
+  @ApiPropertyOptional({
+    example: 5000,
+    description: 'Ongkir minimum (Rupiah)',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(10_000_000)
+  shippingMin?: number;
+
+  @ApiPropertyOptional({ example: 10000, description: 'Tarif per km — instan' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(10_000_000)
+  shippingRateInstant?: number;
+
+  @ApiPropertyOptional({
+    example: 2000,
+    description: 'Tarif per km — terjadwal',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(10_000_000)
+  shippingRateScheduled?: number;
+
+  @ApiPropertyOptional({
+    example: 1000,
+    description: 'Rupiah belanja per 1 poin. Minimal 1 (0 akan membagi nol).',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10_000_000)
+  pointPerRupiah?: number;
 }
