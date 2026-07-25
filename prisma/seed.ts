@@ -90,13 +90,28 @@ async function main() {
   console.log('Assigned permissions to roles');
 
   // 4. Seed admin user + profile
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  //
+  // Kredensial admin diambil dari environment. Default lemah ('admin123')
+  // HANYA boleh untuk pengembangan lokal — di produksi WAJIB set ADMIN_EMAIL
+  // & ADMIN_PASSWORD, kalau tidak seed berhenti (mencegah admin default bocor).
+  const isProd = (process.env.NODE_ENV || 'development') === 'production';
+  if (isProd && (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD)) {
+    throw new Error(
+      'Produksi: set ADMIN_EMAIL & ADMIN_PASSWORD (min 12 karakter) sebelum seed.',
+    );
+  }
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  if (isProd && adminPassword.length < 12) {
+    throw new Error('Produksi: ADMIN_PASSWORD minimal 12 karakter.');
+  }
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
+    where: { email: adminEmail },
     update: {},
     create: {
-      email: 'admin@example.com',
+      email: adminEmail,
       password: hashedPassword,
       roleId: adminRole.id,
       emailVerifiedAt: new Date(),
