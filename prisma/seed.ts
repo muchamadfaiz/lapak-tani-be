@@ -90,29 +90,46 @@ async function main() {
   console.log('Assigned permissions to roles');
 
   // 4. Seed admin user + profile
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  //
+  // Kredensial admin dari environment (ADMIN_EMAIL/ADMIN_PASSWORD).
+  // - Lokal (non-prod): kalau kosong, pakai default admin@example.com/admin123.
+  // - PRODUKSI: kalau kosong, LEWATI (skip) — JANGAN buat admin default lemah,
+  //   dan JANGAN hentikan seed (biar deploy tidak crash). Admin dikelola manual.
+  const isProd = (process.env.NODE_ENV || 'development') === 'production';
+  const adminEmailEnv = process.env.ADMIN_EMAIL;
+  const adminPasswordEnv = process.env.ADMIN_PASSWORD;
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
-      email: 'admin@example.com',
-      password: hashedPassword,
-      roleId: adminRole.id,
-      emailVerifiedAt: new Date(),
-    },
-  });
+  if (isProd && (!adminEmailEnv || !adminPasswordEnv)) {
+    console.log(
+      '⚠️  Lewati seed admin (produksi tanpa ADMIN_EMAIL/ADMIN_PASSWORD).',
+    );
+  } else {
+    const adminEmail = adminEmailEnv || 'admin@example.com';
+    const adminPassword = adminPasswordEnv || 'admin123';
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
-  await prisma.profile.upsert({
-    where: { userId: admin.id },
-    update: {},
-    create: {
-      userId: admin.id,
-      fullName: 'Admin',
-    },
-  });
+    const admin = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {},
+      create: {
+        email: adminEmail,
+        password: hashedPassword,
+        roleId: adminRole.id,
+        emailVerifiedAt: new Date(),
+      },
+    });
 
-  console.log('Seeded admin user:', admin.email);
+    await prisma.profile.upsert({
+      where: { userId: admin.id },
+      update: {},
+      create: {
+        userId: admin.id,
+        fullName: 'Admin',
+      },
+    });
+
+    console.log('Seeded admin user:', admin.email);
+  }
 
   // ── 5. Seed Marketplace (kategori, outlet, produk pertanian) ──
   // UUID tetap + upsert by id agar idempotent (seed jalan tiap container start).
