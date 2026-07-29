@@ -111,6 +111,26 @@ export class UpdateSettingsDto {
   shopServiceHours?: string;
 
   @ApiPropertyOptional({
+    example: 'Lapak Tani | Sayur Segar Palembang',
+    description:
+      'Judul tab browser (storefront & portal admin). Kosong = pakai nama ' +
+      'toko, lalu judul bawaan aplikasi.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  siteTitle?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://api.lapaktani.store/uploads/2026-07-29/favicon.png',
+    description: 'URL favicon hasil unggah. Kosong = pakai favicon bawaan.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  faviconUrl?: string;
+
+  @ApiPropertyOptional({
     example: '#1f8a38',
     description:
       'Warna merek, hex 6 digit. Tangga 50–950 diturunkan frontend. ' +

@@ -14,6 +14,9 @@ export const SETTING_KEYS = {
   shopLogoUrl: 'shop_logo_url',
   shopWhatsapp: 'shop_whatsapp',
   shopServiceHours: 'shop_service_hours',
+  // Judul tab browser & favicon — dipakai storefront DAN portal admin.
+  siteTitle: 'site_title',
+  faviconUrl: 'favicon_url',
   // Tema: satu warna merek, tangga 50-950 diturunkan di frontend.
   themeBrandColor: 'theme_brand_color',
   // Aturan bisnis: ongkir & poin. Sebelumnya konstanta yang ditulis mati di
@@ -61,6 +64,18 @@ export interface ShopIdentity {
   /** Nomor WhatsApp admin, format internasional tanpa '+' (mis. 6285...). */
   whatsapp: string;
   serviceHours: string;
+  /**
+   * Judul tab browser. Kosong = frontend memakai nama toko, lalu judul bawaan
+   * di index.html. Dipisah dari `name` karena judul tab biasanya lebih panjang
+   * dan memuat kata kunci (mis. "Lapak Tani | Sayur Segar Palembang").
+   */
+  siteTitle: string;
+  /**
+   * URL favicon. Kosong = pakai favicon bawaan; SENGAJA tidak jatuh ke
+   * `logoUrl`, karena logo toko umumnya PNG putih transparan yang hilang di
+   * tab browser berlatar terang.
+   */
+  faviconUrl: string;
 }
 
 /**

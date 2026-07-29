@@ -69,6 +69,12 @@ export class SettingController {
     if (dto.shopServiceHours !== undefined) {
       patch[SETTING_KEYS.shopServiceHours] = dto.shopServiceHours;
     }
+    if (dto.siteTitle !== undefined) {
+      patch[SETTING_KEYS.siteTitle] = dto.siteTitle;
+    }
+    if (dto.faviconUrl !== undefined) {
+      patch[SETTING_KEYS.faviconUrl] = dto.faviconUrl;
+    }
     if (dto.themeBrandColor !== undefined) {
       patch[SETTING_KEYS.themeBrandColor] = dto.themeBrandColor;
     }

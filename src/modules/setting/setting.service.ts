@@ -29,6 +29,8 @@ const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.shopLogoUrl]: '',
   [SETTING_KEYS.shopWhatsapp]: process.env.WHATSAPP_ADMIN_NUMBER || '',
   [SETTING_KEYS.shopServiceHours]: '',
+  [SETTING_KEYS.siteTitle]: '',
+  [SETTING_KEYS.faviconUrl]: '',
   // Kosong = frontend memakai palet bawaannya.
   [SETTING_KEYS.themeBrandColor]: '',
   // Bawaan = nilai konstanta yang dulu ditulis mati, supaya perilaku tak
@@ -156,6 +158,8 @@ export class SettingService extends SettingContract {
         // sedangkan tautan wa.me hanya menerima digit.
         whatsapp: all[SETTING_KEYS.shopWhatsapp].replace(/\D/g, ''),
         serviceHours: all[SETTING_KEYS.shopServiceHours].trim(),
+        siteTitle: all[SETTING_KEYS.siteTitle].trim(),
+        faviconUrl: all[SETTING_KEYS.faviconUrl].trim(),
       },
       rules: await this.getBusinessRules(),
       chat: {
