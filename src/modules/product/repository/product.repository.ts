@@ -114,6 +114,18 @@ export class ProductRepository {
     };
   }
 
+  /**
+   * Semua produk yang cocok filter TANPA paginasi — khusus ekspor CSV.
+   * Aman karena hanya dipakai admin dan katalog produk berskala ribuan.
+   */
+  findAllFiltered(filter: ProductFilter): Promise<ProductWithStocks[]> {
+    return this.prisma.product.findMany({
+      where: this.buildWhere(filter),
+      include: WITH_STOCKS,
+      orderBy: { name: 'asc' },
+    });
+  }
+
   /** Daftar produk terpaginasi + total (untuk meta). */
   findAndCount(
     filter: ProductFilter,

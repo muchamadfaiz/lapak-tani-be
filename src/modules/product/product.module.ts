@@ -12,6 +12,8 @@ import {
   UpdateProductUseCase,
   RemoveProductUseCase,
   FindStockLevelsUseCase,
+  ExportProductsUseCase,
+  ImportProductsUseCase,
 } from './use-cases';
 
 @Module({
@@ -27,6 +29,8 @@ import {
     UpdateProductUseCase,
     RemoveProductUseCase,
     FindStockLevelsUseCase,
+    ExportProductsUseCase,
+    ImportProductsUseCase,
   ],
   // Hanya kontrak publik yang diekspos ke modul lain (Order).
   exports: [ProductContract],

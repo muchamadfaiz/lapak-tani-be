@@ -17,4 +17,10 @@ export abstract class CategoryContract {
 
   /** Lempar NotFoundException bila kategori tidak ada. */
   abstract assertExists(id: string): Promise<void>;
+
+  /**
+   * Semua kategori. Dipakai Product untuk ekspor/impor CSV: menerjemahkan
+   * categoryId ↔ nama kategori supaya file CSV enak dibaca & disunting admin.
+   */
+  abstract findAll(): Promise<CategoryRef[]>;
 }

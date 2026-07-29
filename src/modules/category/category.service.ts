@@ -18,6 +18,11 @@ export class CategoryService extends CategoryContract {
     return category ? CategoryService.toRef(category) : null;
   }
 
+  async findAll(): Promise<CategoryRef[]> {
+    const categories = await this.categoryRepository.findAll();
+    return categories.map((c) => CategoryService.toRef(c));
+  }
+
   async assertExists(id: string): Promise<void> {
     const category = await this.categoryRepository.findById(id);
     if (!category) {

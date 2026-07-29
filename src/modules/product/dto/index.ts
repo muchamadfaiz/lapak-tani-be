@@ -5,3 +5,9 @@ export {
   OutletStockResponseDto,
 } from './product-response.dto';
 export { FindProductsQueryDto } from './find-products-query.dto';
+export { ExportProductsQueryDto } from './export-products-query.dto';
+export {
+  ImportProductsQueryDto,
+  ImportProductsResultDto,
+  ImportRowErrorDto,
+} from './import-products.dto';
