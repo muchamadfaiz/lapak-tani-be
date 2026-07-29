@@ -91,43 +91,45 @@ async function main() {
 
   // 4. Seed admin user + profile
   //
-  // Kredensial admin diambil dari environment. Default lemah ('admin123')
-  // HANYA boleh untuk pengembangan lokal — di produksi WAJIB set ADMIN_EMAIL
-  // & ADMIN_PASSWORD, kalau tidak seed berhenti (mencegah admin default bocor).
+  // Kredensial admin dari environment (ADMIN_EMAIL/ADMIN_PASSWORD).
+  // - Lokal (non-prod): kalau kosong, pakai default admin@example.com/admin123.
+  // - PRODUKSI: kalau kosong, LEWATI (skip) — JANGAN buat admin default lemah,
+  //   dan JANGAN hentikan seed (biar deploy tidak crash). Admin dikelola manual.
   const isProd = (process.env.NODE_ENV || 'development') === 'production';
-  if (isProd && (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD)) {
-    throw new Error(
-      'Produksi: set ADMIN_EMAIL & ADMIN_PASSWORD (min 12 karakter) sebelum seed.',
+  const adminEmailEnv = process.env.ADMIN_EMAIL;
+  const adminPasswordEnv = process.env.ADMIN_PASSWORD;
+
+  if (isProd && (!adminEmailEnv || !adminPasswordEnv)) {
+    console.log(
+      '⚠️  Lewati seed admin (produksi tanpa ADMIN_EMAIL/ADMIN_PASSWORD).',
     );
+  } else {
+    const adminEmail = adminEmailEnv || 'admin@example.com';
+    const adminPassword = adminPasswordEnv || 'admin123';
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+    const admin = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {},
+      create: {
+        email: adminEmail,
+        password: hashedPassword,
+        roleId: adminRole.id,
+        emailVerifiedAt: new Date(),
+      },
+    });
+
+    await prisma.profile.upsert({
+      where: { userId: admin.id },
+      update: {},
+      create: {
+        userId: admin.id,
+        fullName: 'Admin',
+      },
+    });
+
+    console.log('Seeded admin user:', admin.email);
   }
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-  if (isProd && adminPassword.length < 12) {
-    throw new Error('Produksi: ADMIN_PASSWORD minimal 12 karakter.');
-  }
-  const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
-  const admin = await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: {},
-    create: {
-      email: adminEmail,
-      password: hashedPassword,
-      roleId: adminRole.id,
-      emailVerifiedAt: new Date(),
-    },
-  });
-
-  await prisma.profile.upsert({
-    where: { userId: admin.id },
-    update: {},
-    create: {
-      userId: admin.id,
-      fullName: 'Admin',
-    },
-  });
-
-  console.log('Seeded admin user:', admin.email);
 
   // ── 5. Seed Marketplace (kategori, outlet, produk pertanian) ──
   // UUID tetap + upsert by id agar idempotent (seed jalan tiap container start).
