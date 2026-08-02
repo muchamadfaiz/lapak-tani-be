@@ -96,6 +96,7 @@ export class ImportProductsUseCase {
 
     const errors: ImportRowErrorDto[] = [];
     const prepared: PreparedRow[] = [];
+    const barcodeRows = new Map<string, number>();
 
     for (let i = 0; i < dataRows.length; i++) {
       // +2: baris 1 adalah header, dan penomoran Excel mulai dari 1.
@@ -103,7 +104,13 @@ export class ImportProductsUseCase {
       const cells = this.toRowObject(columns, dataRows[i]);
       try {
         prepared.push(
-          await this.prepareRow(rowNumber, cells, categoryByName, categoryIds),
+          await this.prepareRow(
+            rowNumber,
+            cells,
+            categoryByName,
+            categoryIds,
+            barcodeRows,
+          ),
         );
       } catch (e) {
         errors.push({
@@ -127,11 +134,14 @@ export class ImportProductsUseCase {
             await this.productRepository.create(item.data);
             created++;
           }
-        } catch {
+        } catch (error) {
           errors.push({
             row: item.row,
             name: item.name,
-            message: 'Gagal menyimpan ke database',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Gagal menyimpan ke database',
           });
         }
       }
@@ -179,6 +189,7 @@ export class ImportProductsUseCase {
     cells: ProductCsvRow,
     categoryByName: Map<string, string>,
     categoryIds: Set<string>,
+    barcodeRows: Map<string, number>,
   ): Promise<PreparedRow> {
     const name = (cells.nama ?? '').trim();
     if (name === '') throw new RowError('Kolom nama wajib diisi');
@@ -243,6 +254,24 @@ export class ImportProductsUseCase {
           `Produk dengan id "${productId}" tidak ditemukan. Kosongkan kolom id bila ingin membuat produk baru.`,
         );
       }
+    }
+
+    const barcode = data.barcode;
+    if (barcode) {
+      const firstRow = barcodeRows.get(barcode);
+      if (firstRow !== undefined) {
+        throw new RowError(
+          `Barcode/SKU "${barcode}" juga digunakan pada baris ${firstRow}`,
+        );
+      }
+
+      const owner = await this.productRepository.findActiveByBarcode(barcode);
+      if (owner && owner.id !== productId) {
+        throw new RowError(
+          `Barcode/SKU "${barcode}" sudah digunakan oleh produk "${owner.name}"`,
+        );
+      }
+      barcodeRows.set(barcode, rowNumber);
     }
 
     return { row: rowNumber, name, productId, data };

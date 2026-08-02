@@ -18,7 +18,9 @@ export class FindProductsQueryDto extends PageOptionsDto {
   @IsUUID()
   categoryId?: string;
 
-  @ApiPropertyOptional({ description: 'Cari berdasarkan nama produk' })
+  @ApiPropertyOptional({
+    description: 'Cari berdasarkan nama produk atau barcode/SKU',
+  })
   @IsOptional()
   @IsString()
   search?: string;

@@ -1,6 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { BARCODE_CONFLICT_MESSAGE } from '../product.util';
 
 export interface ProductFilter {
   categoryId?: string;
@@ -16,6 +21,33 @@ export type ProductWithStocks = Prisma.ProductGetPayload<{
   include: typeof WITH_STOCKS;
 }>;
 
+export function buildProductWhere(
+  filter: ProductFilter,
+): Prisma.ProductWhereInput {
+  return {
+    deletedAt: null,
+    ...(filter.categoryId && { categoryId: filter.categoryId }),
+    ...(filter.available !== undefined && { isAvailable: filter.available }),
+    ...(filter.featured !== undefined && { isFeatured: filter.featured }),
+    ...(filter.search && {
+      OR: [
+        { name: { contains: filter.search, mode: 'insensitive' } },
+        { barcode: { contains: filter.search, mode: 'insensitive' } },
+      ],
+    }),
+  };
+}
+
+function rethrowBarcodeConflict(error: unknown): never {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  ) {
+    throw new ConflictException(BARCODE_CONFLICT_MESSAGE);
+  }
+  throw error;
+}
+
 /**
  * Pemilik data tabel `products` DAN `product_outlets`. Satu-satunya tempat yang
  * boleh mengakses `prisma.product`/`prisma.productOutlet`. Modul lain TIDAK boleh
@@ -28,8 +60,12 @@ export type ProductWithStocks = Prisma.ProductGetPayload<{
 export class ProductRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: Prisma.ProductCreateInput): Promise<ProductWithStocks> {
-    return this.prisma.product.create({ data, include: WITH_STOCKS });
+  async create(data: Prisma.ProductCreateInput): Promise<ProductWithStocks> {
+    try {
+      return await this.prisma.product.create({ data, include: WITH_STOCKS });
+    } catch (error) {
+      rethrowBarcodeConflict(error);
+    }
   }
 
   /** Set/timpa stok produk di beberapa outlet (upsert per (produk, outlet)). */
@@ -90,6 +126,13 @@ export class ProductRepository {
     });
   }
 
+  findActiveByBarcode(barcode: string): Promise<ProductWithStocks | null> {
+    return this.prisma.product.findFirst({
+      where: { barcode, deletedAt: null },
+      include: WITH_STOCKS,
+    });
+  }
+
   /** Stok beberapa produk pada satu outlet → productId → stock. */
   async getStockForOutlet(
     outletId: string,
@@ -102,25 +145,13 @@ export class ProductRepository {
     return new Map(rows.map((r) => [r.productId, r.stock]));
   }
 
-  private buildWhere(filter: ProductFilter): Prisma.ProductWhereInput {
-    return {
-      deletedAt: null,
-      ...(filter.categoryId && { categoryId: filter.categoryId }),
-      ...(filter.available !== undefined && { isAvailable: filter.available }),
-      ...(filter.featured !== undefined && { isFeatured: filter.featured }),
-      ...(filter.search && {
-        name: { contains: filter.search, mode: 'insensitive' },
-      }),
-    };
-  }
-
   /**
    * Semua produk yang cocok filter TANPA paginasi — khusus ekspor CSV.
    * Aman karena hanya dipakai admin dan katalog produk berskala ribuan.
    */
   findAllFiltered(filter: ProductFilter): Promise<ProductWithStocks[]> {
     return this.prisma.product.findMany({
-      where: this.buildWhere(filter),
+      where: buildProductWhere(filter),
       include: WITH_STOCKS,
       orderBy: { name: 'asc' },
     });
@@ -135,7 +166,7 @@ export class ProductRepository {
       orderBy: Prisma.ProductOrderByWithRelationInput;
     },
   ): Promise<[ProductWithStocks[], number]> {
-    const where = this.buildWhere(filter);
+    const where = buildProductWhere(filter);
     return this.prisma.$transaction([
       this.prisma.product.findMany({
         where,
@@ -148,15 +179,19 @@ export class ProductRepository {
     ]);
   }
 
-  update(
+  async update(
     id: string,
     data: Prisma.ProductUpdateInput,
   ): Promise<ProductWithStocks> {
-    return this.prisma.product.update({
-      where: { id },
-      data,
-      include: WITH_STOCKS,
-    });
+    try {
+      return await this.prisma.product.update({
+        where: { id },
+        data,
+        include: WITH_STOCKS,
+      });
+    } catch (error) {
+      rethrowBarcodeConflict(error);
+    }
   }
 
   /** Soft delete: tandai terhapus & nonaktifkan agar tak bisa dipesan. */
