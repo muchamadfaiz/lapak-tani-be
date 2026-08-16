@@ -33,6 +33,7 @@ const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.faviconUrl]: '',
   // Kosong = frontend memakai palet bawaannya.
   [SETTING_KEYS.themeBrandColor]: '',
+  [SETTING_KEYS.themeSecondaryColor]: '',
   // Bawaan = nilai konstanta yang dulu ditulis mati, supaya perilaku tak
   // berubah sebelum admin menyentuh apa pun.
   [SETTING_KEYS.shippingMin]: '5000',
@@ -176,6 +177,11 @@ export class SettingService extends SettingContract {
           all[SETTING_KEYS.themeBrandColor].trim(),
         )
           ? all[SETTING_KEYS.themeBrandColor].trim().toLowerCase()
+          : '',
+        secondaryColor: /^#[0-9a-f]{6}$/i.test(
+          all[SETTING_KEYS.themeSecondaryColor].trim(),
+        )
+          ? all[SETTING_KEYS.themeSecondaryColor].trim().toLowerCase()
           : '',
       },
     };

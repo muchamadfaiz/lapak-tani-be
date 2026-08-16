@@ -145,6 +145,20 @@ export class UpdateSettingsDto {
   })
   themeBrandColor?: string;
 
+  @ApiPropertyOptional({
+    example: '#ea580c',
+    description:
+      'Warna aksen (badge Promo/Baru, tombol tambah keranjang, harga ' +
+      'diskon), hex 6 digit. Tangga 50–950 diturunkan frontend. ' +
+      'Kosongkan untuk kembali ke warna bawaan.',
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^(#[0-9a-fA-F]{6})?$/, {
+    message: 'Warna aksen harus hex 6 digit, mis. #ea580c',
+  })
+  themeSecondaryColor?: string;
+
   // ── Aturan ongkir & poin ──
 
   @ApiPropertyOptional({

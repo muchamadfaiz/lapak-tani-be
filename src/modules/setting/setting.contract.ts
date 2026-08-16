@@ -17,8 +17,10 @@ export const SETTING_KEYS = {
   // Judul tab browser & favicon — dipakai storefront DAN portal admin.
   siteTitle: 'site_title',
   faviconUrl: 'favicon_url',
-  // Tema: satu warna merek, tangga 50-950 diturunkan di frontend.
+  // Tema: warna merek (primer) & aksen (sekunder), tangga 50-950 masing-masing
+  // diturunkan di frontend dari satu hex saja.
   themeBrandColor: 'theme_brand_color',
+  themeSecondaryColor: 'theme_secondary_color',
   // Aturan bisnis: ongkir & poin. Sebelumnya konstanta yang ditulis mati di
   // BE DAN di frontend, jadi sekali berubah ada tiga tempat yang harus ingat.
   shippingMin: 'shipping_min',
@@ -101,13 +103,16 @@ export interface PublicPaymentSettings {
 }
 
 /**
- * Tema. Admin hanya memilih SATU warna; tangga 50-950 diturunkan frontend
- * dengan terang-gelap dipatok, sehingga kontras teks tak bisa dirusak dari
- * dashboard. Kosong = pakai warna bawaan.
+ * Tema. Admin memilih dua warna — merek (primer) & aksen (sekunder); tangga
+ * 50-950 masing-masing diturunkan frontend dengan terang-gelap dipatok,
+ * sehingga kontras teks tak bisa dirusak dari dashboard. Kosong = pakai
+ * warna bawaan.
  */
 export interface ThemeSettings {
   /** Hex 6 digit berawalan '#', mis. '#1f8a38'. */
   brandColor: string;
+  /** Warna aksen (badge Promo/Baru, tombol tambah keranjang, harga diskon). */
+  secondaryColor: string;
 }
 
 /**

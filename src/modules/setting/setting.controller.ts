@@ -78,6 +78,9 @@ export class SettingController {
     if (dto.themeBrandColor !== undefined) {
       patch[SETTING_KEYS.themeBrandColor] = dto.themeBrandColor;
     }
+    if (dto.themeSecondaryColor !== undefined) {
+      patch[SETTING_KEYS.themeSecondaryColor] = dto.themeSecondaryColor;
+    }
     for (const k of [
       'shippingMin',
       'shippingRateInstant',
