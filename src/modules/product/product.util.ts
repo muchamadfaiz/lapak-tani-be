@@ -1,5 +1,17 @@
 import { BadRequestException } from '@nestjs/common';
 
+export const BARCODE_CONFLICT_MESSAGE =
+  'Barcode/SKU sudah digunakan oleh produk lain';
+
+// Barcode disimpan sebagai teks agar nol di depan tidak hilang. Input kosong
+// dinormalisasi menjadi null supaya banyak produk tanpa barcode tetap sah.
+export function normalizeProductBarcode(
+  value: string | null | undefined,
+): string | null {
+  const normalized = value?.trim() ?? '';
+  return normalized === '' ? null : normalized;
+}
+
 /**
  * Harga coret harus DI ATAS harga jual, kalau tidak diskonnya jadi 0% atau
  * negatif di storefront. Validasi ini lintas-field (butuh price sekaligus

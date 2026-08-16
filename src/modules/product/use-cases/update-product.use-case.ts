@@ -1,10 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CategoryContract } from '../../category';
 import { OutletContract } from '../../outlet';
 import { ProductRepository } from '../repository/product.repository';
 import { UpdateProductDto, ProductResponseDto } from '../dto';
 import { ProductMapper } from '../mapper/product.mapper';
-import { assertOriginalPriceAbovePrice } from '../product.util';
+import {
+  assertOriginalPriceAbovePrice,
+  BARCODE_CONFLICT_MESSAGE,
+  normalizeProductBarcode,
+} from '../product.util';
 
 @Injectable()
 export class UpdateProductUseCase {
@@ -39,6 +47,18 @@ export class UpdateProductUseCase {
         : existing.originalPrice;
     assertOriginalPriceAbovePrice(nextOriginalPrice, nextPrice);
 
+    const nextBarcode =
+      dto.barcode === undefined
+        ? existing.barcode
+        : normalizeProductBarcode(dto.barcode);
+    if (nextBarcode) {
+      const owner =
+        await this.productRepository.findActiveByBarcode(nextBarcode);
+      if (owner && owner.id !== id) {
+        throw new ConflictException(BARCODE_CONFLICT_MESSAGE);
+      }
+    }
+
     await this.productRepository.update(id, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.description !== undefined && { description: dto.description }),
@@ -54,7 +74,7 @@ export class UpdateProductUseCase {
       ...(dto.isAvailable !== undefined && { isAvailable: dto.isAvailable }),
       ...(dto.isFeatured !== undefined && { isFeatured: dto.isFeatured }),
       ...(dto.soldByWeight !== undefined && { soldByWeight: dto.soldByWeight }),
-      ...(dto.barcode !== undefined && { barcode: dto.barcode || null }),
+      ...(dto.barcode !== undefined && { barcode: nextBarcode }),
     });
 
     // Ambil ulang agar stok terbaru & outletStocks terisi di response.

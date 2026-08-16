@@ -104,6 +104,7 @@ export class CreateProductDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(100, { message: 'Barcode/SKU maksimal 100 karakter' })
   barcode?: string;
 
   @ApiPropertyOptional({ description: 'URL gambar produk' })
