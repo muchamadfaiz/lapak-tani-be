@@ -47,7 +47,7 @@ export class WaLoginService {
     await this.repo.create({ code, expiresAt });
 
     const text =
-      `Halo Lapak Tani! Saya mau masuk/daftar aplikasi dengan nomor WhatsApp ini.\n` +
+      `Halo Admin! Saya mau masuk/daftar aplikasi dengan nomor WhatsApp ini.\n` +
       `Kode saya: ${code}\n\n` +
       `(Jangan ubah kode ini & jangan bagikan ke siapa pun.)`;
     const waUrl = `https://wa.me/${businessNumber}?text=${encodeURIComponent(text)}`;
