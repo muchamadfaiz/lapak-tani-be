@@ -77,7 +77,7 @@ export class UpdateSettingsDto {
   shopName?: string;
 
   @ApiPropertyOptional({
-    example: 'Produk segar langsung dari petani Palembang',
+    example: 'Produk segar langsung dari petani lokal',
   })
   @IsOptional()
   @IsString()
