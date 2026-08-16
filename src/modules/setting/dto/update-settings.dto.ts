@@ -111,6 +111,16 @@ export class UpdateSettingsDto {
   shopServiceHours?: string;
 
   @ApiPropertyOptional({
+    example: 'Ada pertanyaan soal pesananmu? Chat admin Lapak Tani langsung!',
+    description:
+      'Teks bilah CTA "Chat admin" di puncak beranda. Kosong = pakai kalimat bawaan.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  shopCtaBarText?: string;
+
+  @ApiPropertyOptional({
     example: 'Lapak Tani | Sayur Segar Palembang',
     description:
       'Judul tab browser (storefront & portal admin). Kosong = pakai nama ' +

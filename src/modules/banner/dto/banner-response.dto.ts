@@ -4,8 +4,8 @@ export class BannerResponseDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty({ example: 'Promo Ramadan 2025' })
-  title: string;
+  @ApiProperty({ example: 'Promo Ramadan 2025', nullable: true })
+  title: string | null;
 
   @ApiProperty({ nullable: true })
   description: string | null;
@@ -27,6 +27,12 @@ export class BannerResponseDto {
 
   @ApiProperty({ nullable: true })
   endDate: Date | null;
+
+  @ApiProperty()
+  overlayEnabled: boolean;
+
+  @ApiProperty()
+  overlayOpacity: number;
 
   @ApiProperty()
   createdAt: Date;

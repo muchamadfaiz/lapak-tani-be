@@ -9,7 +9,7 @@ export class CreateBannerUseCase {
 
   async execute(dto: CreateBannerDto): Promise<BannerResponseDto> {
     const banner = await this.bannerRepository.create({
-      title: dto.title,
+      title: dto.title || null,
       description: dto.description,
       imageUrl: dto.imageUrl,
       linkUrl: dto.linkUrl,
@@ -17,6 +17,8 @@ export class CreateBannerUseCase {
       sortOrder: dto.sortOrder ?? 0,
       startDate: dto.startDate ? new Date(dto.startDate) : null,
       endDate: dto.endDate ? new Date(dto.endDate) : null,
+      overlayEnabled: dto.overlayEnabled ?? true,
+      overlayOpacity: dto.overlayOpacity ?? 55,
     });
     return BannerMapper.toResponseDto(banner);
   }

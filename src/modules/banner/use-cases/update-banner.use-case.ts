@@ -14,7 +14,9 @@ export class UpdateBannerUseCase {
     }
 
     const banner = await this.bannerRepository.update(id, {
-      ...(dto.title !== undefined && { title: dto.title }),
+      // String kosong = admin sengaja mengosongkan judul (banner murni gambar),
+      // bukan "biarkan apa adanya" — makanya di-null-kan, bukan diabaikan.
+      ...(dto.title !== undefined && { title: dto.title || null }),
       ...(dto.description !== undefined && { description: dto.description }),
       ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
       ...(dto.linkUrl !== undefined && { linkUrl: dto.linkUrl }),
@@ -22,6 +24,8 @@ export class UpdateBannerUseCase {
       ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
       ...(dto.startDate !== undefined && { startDate: dto.startDate ? new Date(dto.startDate) : null }),
       ...(dto.endDate !== undefined && { endDate: dto.endDate ? new Date(dto.endDate) : null }),
+      ...(dto.overlayEnabled !== undefined && { overlayEnabled: dto.overlayEnabled }),
+      ...(dto.overlayOpacity !== undefined && { overlayOpacity: dto.overlayOpacity }),
     });
     return BannerMapper.toResponseDto(banner);
   }

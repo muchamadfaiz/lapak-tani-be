@@ -69,6 +69,9 @@ export class SettingController {
     if (dto.shopServiceHours !== undefined) {
       patch[SETTING_KEYS.shopServiceHours] = dto.shopServiceHours;
     }
+    if (dto.shopCtaBarText !== undefined) {
+      patch[SETTING_KEYS.shopCtaBarText] = dto.shopCtaBarText;
+    }
     if (dto.siteTitle !== undefined) {
       patch[SETTING_KEYS.siteTitle] = dto.siteTitle;
     }

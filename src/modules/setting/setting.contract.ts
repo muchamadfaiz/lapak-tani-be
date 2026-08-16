@@ -14,6 +14,8 @@ export const SETTING_KEYS = {
   shopLogoUrl: 'shop_logo_url',
   shopWhatsapp: 'shop_whatsapp',
   shopServiceHours: 'shop_service_hours',
+  // Teks bilah CTA "Chat admin" yang menempel di atas beranda storefront.
+  shopCtaBarText: 'shop_cta_bar_text',
   // Judul tab browser & favicon — dipakai storefront DAN portal admin.
   siteTitle: 'site_title',
   faviconUrl: 'favicon_url',
@@ -66,6 +68,11 @@ export interface ShopIdentity {
   /** Nomor WhatsApp admin, format internasional tanpa '+' (mis. 6285...). */
   whatsapp: string;
   serviceHours: string;
+  /**
+   * Teks bilah CTA "Chat admin" di puncak beranda storefront. Kosong =
+   * frontend memakai kalimat bawaannya sendiri.
+   */
+  ctaBarText: string;
   /**
    * Judul tab browser. Kosong = frontend memakai nama toko, lalu judul bawaan
    * di index.html. Dipisah dari `name` karena judul tab biasanya lebih panjang

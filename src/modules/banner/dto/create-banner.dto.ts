@@ -6,16 +6,20 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Max,
   MaxLength,
-  MinLength,
+  Min,
 } from 'class-validator';
 
 export class CreateBannerDto {
-  @ApiProperty({ example: 'Promo Ramadan 2025' })
+  @ApiPropertyOptional({
+    example: 'Promo Ramadan 2025',
+    description: 'Kosongkan untuk banner murni gambar (tanpa judul/deskripsi/tombol).',
+  })
+  @IsOptional()
   @IsString()
-  @MinLength(2)
   @MaxLength(200)
-  title: string;
+  title?: string;
 
   @ApiPropertyOptional({ example: 'Diskon 20% untuk semua produk segar' })
   @IsOptional()
@@ -50,4 +54,22 @@ export class CreateBannerDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @ApiPropertyOptional({
+    default: true,
+    description: 'Gradient gelap di atas gambar (agar judul terbaca). Matikan untuk gambar polos.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  overlayEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    default: 55,
+    description: 'Intensitas gradient, 0 (tak kelihatan) - 100 (gelap penuh).',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  overlayOpacity?: number;
 }

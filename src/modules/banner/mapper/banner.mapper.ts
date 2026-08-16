@@ -13,6 +13,8 @@ export class BannerMapper {
       sortOrder: banner.sortOrder,
       startDate: banner.startDate,
       endDate: banner.endDate,
+      overlayEnabled: banner.overlayEnabled,
+      overlayOpacity: banner.overlayOpacity,
       createdAt: banner.createdAt,
       updatedAt: banner.updatedAt,
     };

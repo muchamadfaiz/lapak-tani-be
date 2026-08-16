@@ -375,7 +375,8 @@ model RefreshToken {
 
 model Banner {
   id          String    @id @default(uuid())
-  title       String
+  // Kosong = banner murni gambar, tanpa overlay judul/deskripsi/tombol CTA.
+  title       String?
   description String?   @db.Text
   imageUrl    String
   linkUrl     String?
@@ -383,6 +384,10 @@ model Banner {
   sortOrder   Int       @default(0)
   startDate   DateTime?
   endDate     DateTime?
+  // Gradient gelap di atas gambar (supaya teks judul terbaca). Bisa dimatikan
+  // total, atau diatur intensitasnya, per banner.
+  overlayEnabled Boolean @default(true)
+  overlayOpacity Int     @default(55)
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
