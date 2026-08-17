@@ -18,6 +18,21 @@ export class SettingRepository {
     return new Map(rows.map((r) => [r.key, r.value]));
   }
 
+  /**
+   * Kapan terakhir salah satu key ini disimpan. Dipakai dashboard sebagai
+   * bukti bahwa kredensial memang tersimpan — kolom isiannya sendiri selalu
+   * kosong karena nilai rahasia tak pernah dikirim balik ke browser.
+   * null = belum pernah disimpan lewat dashboard (masih memakai env).
+   */
+  async findLastUpdatedAt(keys: string[]): Promise<Date | null> {
+    const row = await this.prisma.setting.findFirst({
+      where: { key: { in: keys } },
+      orderBy: { updatedAt: 'desc' },
+      select: { updatedAt: true },
+    });
+    return row?.updatedAt ?? null;
+  }
+
   async upsert(key: string, value: string): Promise<void> {
     await this.prisma.setting.upsert({
       where: { key },

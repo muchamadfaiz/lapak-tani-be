@@ -31,7 +31,27 @@ export const SETTING_KEYS = {
   pointPerRupiah: 'point_per_rupiah',
   // Gaya bahasa asisten CS.
   chatLanguage: 'chat_language',
+  // ── Kredensial gerbang pembayaran (Xendit) ──
+  // Dipindah dari .env ke sini supaya pemilik toko bisa mengganti sendiri dari
+  // dashboard tanpa menyentuh server. Dua kunci di bawah RAHASIA: disimpan
+  // terenkripsi dan tidak pernah ikut dalam payload publik mana pun.
+  xenditEnabled: 'xendit_enabled',
+  xenditSecretKey: 'xendit_secret_key',
+  xenditCallbackToken: 'xendit_callback_token',
+  xenditInvoiceDurationSec: 'xendit_invoice_duration_sec',
+  paymentSuccessUrl: 'payment_success_url',
+  paymentFailureUrl: 'payment_failure_url',
 } as const;
+
+/**
+ * Kunci pengaturan yang isinya RAHASIA. Nilainya dienkripsi sebelum masuk DB
+ * dan hanya boleh keluar server dalam bentuk tersamar. Daftar ini dipakai
+ * SettingService sebagai satu-satunya penentu apa yang perlu dienkripsi.
+ */
+export const SECRET_SETTING_KEYS: readonly string[] = [
+  SETTING_KEYS.xenditSecretKey,
+  SETTING_KEYS.xenditCallbackToken,
+];
 
 /** Bahasa jawaban asisten CS. */
 export const CHAT_LANGUAGES = ['id', 'palembang'] as const;
@@ -137,10 +157,32 @@ export interface PublicSettings extends PublicPaymentSettings {
 }
 
 /**
+ * Kredensial gerbang pembayaran, sudah didekripsi. HANYA untuk dipakai di
+ * dalam server (modul Payment) — jangan pernah dikembalikan lewat HTTP.
+ */
+export interface XenditCredentials {
+  /** Saklar admin: gerbang dipakai atau tidak, terpisah dari ada/tidaknya kunci. */
+  enabled: boolean;
+  secretKey: string;
+  /** Nilai header `x-callback-token` untuk memverifikasi webhook. */
+  callbackToken: string;
+  invoiceDurationSec: number;
+  successRedirectUrl: string;
+  failureRedirectUrl: string;
+}
+
+/**
  * Batas publik modul Setting. Modul lain (mis. Payment) hanya butuh tahu
  * apakah pembayaran online aktif — bukan seluruh CRUD pengaturan.
  */
 export abstract class SettingContract {
+  /**
+   * Kredensial Xendit terkini (sudah didekripsi). Dibaca dari DB; bila admin
+   * belum pernah menyimpan apa pun, jatuh ke variabel env lama supaya
+   * pemasangan yang sudah berjalan tidak berubah perilakunya.
+   */
+  abstract getXenditCredentials(): Promise<XenditCredentials>;
+
   /** true bila pembayaran online diaktifkan admin (default: true). */
   abstract isOnlinePaymentEnabled(): Promise<boolean>;
 

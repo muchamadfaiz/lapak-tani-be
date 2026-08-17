@@ -26,7 +26,7 @@ export class PaymentService extends PaymentContract {
     orderNumber: string,
     amount: number,
   ): Promise<{ qrString: string; qrId: string; expiresAt: string | null }> {
-    if (!this.xendit.enabled) {
+    if (!(await this.xendit.isEnabled())) {
       throw new BadRequestException('Pembayaran online belum diaktifkan');
     }
     if (!(await this.settingContract.isOnlinePaymentEnabled())) {
@@ -45,8 +45,8 @@ export class PaymentService extends PaymentContract {
     return { qrString: qr.qrString, qrId: qr.qrId, expiresAt: qr.expiresAt };
   }
 
-  isSandbox(): boolean {
-    return this.xendit.sandbox;
+  isSandbox(): Promise<boolean> {
+    return this.xendit.isSandbox();
   }
 
   /**
@@ -54,7 +54,7 @@ export class PaymentService extends PaymentContract {
    * Dua gerbang: kredensial/env (xendit.enabled) DAN toggle admin (setting).
    */
   async createCheckout(orderId: string): Promise<CheckoutResult> {
-    if (!this.xendit.enabled) {
+    if (!(await this.xendit.isEnabled())) {
       throw new BadRequestException('Pembayaran online belum diaktifkan');
     }
     if (!(await this.settingContract.isOnlinePaymentEnabled())) {
@@ -103,7 +103,7 @@ export class PaymentService extends PaymentContract {
       return { status: fromOrder(order.status) };
     }
 
-    if (!this.xendit.enabled) {
+    if (!(await this.xendit.isEnabled())) {
       return { status: fromOrder(order.status) };
     }
 
@@ -131,10 +131,8 @@ export class PaymentService extends PaymentContract {
     body: unknown,
   ): Promise<{ ok: boolean }> {
     try {
-      const { orderNumber, status, paymentMethod } = this.xendit.readCallback(
-        token,
-        body,
-      );
+      const { orderNumber, status, paymentMethod } =
+        await this.xendit.readCallback(token, body);
       await this.sync(orderNumber, status, paymentMethod);
     } catch (e) {
       // Callback tak terverifikasi / order tak dikenal. Tetap balas 200 agar

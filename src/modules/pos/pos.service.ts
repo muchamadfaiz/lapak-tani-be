@@ -268,7 +268,7 @@ export class PosService {
         qrString: qr.qrString,
         expiresAt: qr.expiresAt,
         // Tombol "simulasikan bayar" hanya muncul di kasir saat mode sandbox.
-        sandbox: this.paymentContract.isSandbox(),
+        sandbox: await this.paymentContract.isSandbox(),
       };
     } catch (e) {
       // Gagal buat QR → batalkan order pending agar stok kembali (tidak nyangkut).
@@ -301,7 +301,7 @@ export class PosService {
    * produksi.
    */
   async simulatePaid(orderId: string): Promise<{ ok: boolean }> {
-    if (!this.paymentContract.isSandbox()) {
+    if (!(await this.paymentContract.isSandbox())) {
       throw new ForbiddenException('Simulasi hanya tersedia di mode sandbox');
     }
     const st = await this.orderContract.getPosOrderStatus(orderId);

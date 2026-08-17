@@ -1,14 +1,19 @@
 import { Body, Controller, Get, Headers, Param, Post, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Public, ResponseMessage } from '../../common';
+import { Public, ResponseMessage, Roles } from '../../common';
 import { CreateSnapDto } from './dto/create-snap.dto';
+import { TestGatewayDto } from './dto/test-gateway.dto';
 import { PaymentService } from './payment.service';
+import { XenditService } from './xendit.service';
 
 @ApiTags('Payments')
 @Controller('payments')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly xendit: XenditService,
+  ) {}
 
   @Public()
   @Post('checkout')
@@ -61,5 +66,21 @@ export class PaymentController {
     @Req() req: Request,
   ) {
     return this.paymentService.handleCallback(token, req.body);
+  }
+
+  /**
+   * Uji kredensial gerbang tanpa membuat transaksi apa pun. Ditaruh di modul
+   * Payment (bukan Setting) karena hanya modul ini yang boleh bicara dengan
+   * Xendit — sekaligus menghindari ketergantungan melingkar antar modul.
+   */
+  @Roles('ADMIN')
+  @Post('gateway/test')
+  @ApiOperation({
+    summary: 'Tes koneksi kredensial Xendit (Admin) — tidak membuat transaksi',
+  })
+  @ApiResponse({ status: 201, description: '{ ok, mode, message }' })
+  @ResponseMessage('Success test payment gateway')
+  testGateway(@Body() dto: TestGatewayDto) {
+    return this.xendit.testConnection(dto.secretKey);
   }
 }

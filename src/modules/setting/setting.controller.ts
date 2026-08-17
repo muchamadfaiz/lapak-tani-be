@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Patch } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Public, ResponseMessage, Roles } from '../../common';
+import { CurrentUser, Public, ResponseMessage, Roles } from '../../common';
+import { UpdateGatewayDto } from './dto/update-gateway.dto';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { SETTING_KEYS, PublicSettings } from './setting.contract';
 import { SettingService } from './setting.service';
@@ -8,7 +9,48 @@ import { SettingService } from './setting.service';
 @ApiTags('Settings')
 @Controller('settings')
 export class SettingController {
+  private readonly logger = new Logger(SettingController.name);
+
   constructor(private readonly svc: SettingService) {}
+
+  // ── Gerbang pembayaran (Xendit) ───────────────────────────────────────────
+  // Sengaja TIDAK ikut dalam GET /settings maupun /settings/public: dua endpoint
+  // itu mengembalikan objek yang sama, dan yang satu terbuka tanpa autentikasi.
+  // Kredensial pembayaran hanya boleh lewat jalur khusus di bawah ini.
+
+  @Roles('ADMIN')
+  @Get('payment-gateway')
+  @ApiOperation({
+    summary:
+      'Kredensial gerbang pembayaran (Admin). Kunci hanya ditampilkan tersamar.',
+  })
+  @ResponseMessage('Success get payment gateway settings')
+  getGateway() {
+    return this.svc.getXenditAdminView();
+  }
+
+  @Roles('ADMIN')
+  @Patch('payment-gateway')
+  @ApiOperation({
+    summary:
+      'Ubah kredensial gerbang pembayaran (Admin). Kunci kosong = tidak diubah.',
+  })
+  @ResponseMessage('Success update payment gateway settings')
+  async updateGateway(
+    @Body() dto: UpdateGatewayDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    await this.svc.updateXendit(dto);
+    // Jejak audit: catat SIAPA yang mengubah kredensial pembayaran — tidak
+    // pernah nilainya.
+    const berubah = Object.keys(dto).filter(
+      (k) => dto[k as keyof UpdateGatewayDto] !== undefined,
+    );
+    this.logger.log(
+      `Kredensial gerbang pembayaran diubah oleh user ${userId} — field: ${berubah.join(', ')}`,
+    );
+    return this.svc.getXenditAdminView();
+  }
 
   @Public()
   @Get('public')
@@ -26,7 +68,10 @@ export class SettingController {
   @ApiOperation({ summary: 'Semua pengaturan (Admin)' })
   @ResponseMessage('Success get settings')
   getAll(): Promise<PublicSettings> {
-    return this.svc.getPublicSettings();
+    // `false` = tampilkan NIAT admin, bukan nilai efektif. Kalau tidak, sakelar
+    // "Pembayaran Online" akan terlihat mati sendiri setiap kali kredensial
+    // gerbang belum diisi — padahal admin tidak pernah mematikannya.
+    return this.svc.getPublicSettings(false);
   }
 
   @Roles('ADMIN')
@@ -96,6 +141,6 @@ export class SettingController {
       patch[SETTING_KEYS.chatLanguage] = dto.chatLanguage;
     }
     await this.svc.update(patch);
-    return this.svc.getPublicSettings();
+    return this.svc.getPublicSettings(false);
   }
 }
