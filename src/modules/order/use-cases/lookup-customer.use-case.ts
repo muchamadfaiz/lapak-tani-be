@@ -33,7 +33,7 @@ export class LookupCustomerUseCase {
     }
 
     // Gerbang OTP (bila fitur aktif): butuh token sesi-HP yang cocok.
-    if (this.otpContract.enabled) {
+    if (await this.otpContract.isEnabled()) {
       const verified = otpToken
         ? this.otpContract.verifyPhoneToken(otpToken)
         : null;

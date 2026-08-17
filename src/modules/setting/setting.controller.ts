@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Public, ResponseMessage, Roles } from '../../common';
 import { UpdateGatewayDto } from './dto/update-gateway.dto';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
+import { UpdateWhatsappDto } from './dto/update-whatsapp.dto';
 import { SETTING_KEYS, PublicSettings } from './setting.contract';
 import { SettingService } from './setting.service';
 
@@ -17,6 +18,41 @@ export class SettingController {
   // Sengaja TIDAK ikut dalam GET /settings maupun /settings/public: dua endpoint
   // itu mengembalikan objek yang sama, dan yang satu terbuka tanpa autentikasi.
   // Kredensial pembayaran hanya boleh lewat jalur khusus di bawah ini.
+
+  // ── Kredensial WhatsApp (Fonnte) ──────────────────────────────────────────
+  // Jalur khusus, alasan sama dengan gerbang pembayaran: isinya rahasia dan
+  // tidak boleh ikut /settings maupun /settings/public.
+
+  @Roles('ADMIN')
+  @Get('whatsapp')
+  @ApiOperation({
+    summary:
+      'Kredensial WhatsApp/OTP (Admin). Token hanya ditampilkan tersamar.',
+  })
+  @ResponseMessage('Success get whatsapp settings')
+  getWhatsapp() {
+    return this.svc.getOtpAdminView();
+  }
+
+  @Roles('ADMIN')
+  @Patch('whatsapp')
+  @ApiOperation({
+    summary: 'Ubah kredensial WhatsApp/OTP (Admin). Token kosong = tidak diubah.',
+  })
+  @ResponseMessage('Success update whatsapp settings')
+  async updateWhatsapp(
+    @Body() dto: UpdateWhatsappDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    await this.svc.updateOtp(dto);
+    const berubah = Object.keys(dto).filter(
+      (k) => dto[k as keyof UpdateWhatsappDto] !== undefined,
+    );
+    this.logger.log(
+      `Kredensial WhatsApp diubah oleh user ${userId} — field: ${berubah.join(', ')}`,
+    );
+    return this.svc.getOtpAdminView();
+  }
 
   @Roles('ADMIN')
   @Get('payment-gateway')

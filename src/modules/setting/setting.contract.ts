@@ -41,7 +41,27 @@ export const SETTING_KEYS = {
   xenditInvoiceDurationSec: 'xendit_invoice_duration_sec',
   paymentSuccessUrl: 'payment_success_url',
   paymentFailureUrl: 'payment_failure_url',
+  // ── Kredensial pengirim OTP WhatsApp (Fonnte) ──
+  // Sama alasannya dengan Xendit: pemilik toko harus bisa mengganti token
+  // sendiri saat perangkat WA-nya berganti, tanpa menyentuh server.
+  // Twilio (SMS) SENGAJA tidak ikut — tetap di env, karena kanal SMS tidak
+  // dipakai dan menampilkannya di dashboard hanya membuka pilihan yang
+  // kredensialnya kosong.
+  otpEnabled: 'otp_enabled',
+  otpChannel: 'otp_channel',
+  fonnteToken: 'fonnte_token',
+  waBusinessNumber: 'wa_business_number',
+  waLoginWebhookToken: 'wa_login_webhook_token',
 } as const;
+
+/**
+ * Kanal OTP yang boleh dipilih DARI DASHBOARD. `sms` sengaja tidak ada di
+ * sini: kredensial Twilio masih di env, jadi memilihnya dari dashboard hanya
+ * menghasilkan OTP yang gagal kirim diam-diam. Nilai `sms` yang sudah
+ * telanjur diset lewat env tetap dihormati saat dibaca.
+ */
+export const OTP_CHANNELS_DASHBOARD = ['whatsapp', 'screen'] as const;
+export type OtpChannel = 'whatsapp' | 'sms' | 'screen';
 
 /**
  * Kunci pengaturan yang isinya RAHASIA. Nilainya dienkripsi sebelum masuk DB
@@ -51,6 +71,8 @@ export const SETTING_KEYS = {
 export const SECRET_SETTING_KEYS: readonly string[] = [
   SETTING_KEYS.xenditSecretKey,
   SETTING_KEYS.xenditCallbackToken,
+  SETTING_KEYS.fonnteToken,
+  SETTING_KEYS.waLoginWebhookToken,
 ];
 
 /** Bahasa jawaban asisten CS. */
@@ -172,10 +194,31 @@ export interface XenditCredentials {
 }
 
 /**
+ * Kredensial pengirim OTP WhatsApp, sudah didekripsi. HANYA untuk dipakai di
+ * dalam server (modul OTP) — jangan pernah dikembalikan lewat HTTP.
+ */
+export interface OtpCredentials {
+  enabled: boolean;
+  channel: OtpChannel;
+  /** Token Fonnte. Kosong = WhatsApp tidak bisa mengirim apa pun. */
+  fonnteToken: string;
+  /** Nomor WA bisnis tujuan "login instan" (reverse-OTP). */
+  waBusinessNumber: string;
+  /** Secret yang dicek di webhook pesan masuk WA (anti-pemalsuan). */
+  waLoginWebhookToken: string;
+}
+
+/**
  * Batas publik modul Setting. Modul lain (mis. Payment) hanya butuh tahu
  * apakah pembayaran online aktif — bukan seluruh CRUD pengaturan.
  */
 export abstract class SettingContract {
+  /**
+   * Kredensial OTP WhatsApp terkini (sudah didekripsi). Sama seperti Xendit:
+   * dibaca dari DB, jatuh ke env selama admin belum pernah menyimpannya.
+   */
+  abstract getOtpCredentials(): Promise<OtpCredentials>;
+
   /**
    * Kredensial Xendit terkini (sudah didekripsi). Dibaca dari DB; bila admin
    * belum pernah menyimpan apa pun, jatuh ke variabel env lama supaya

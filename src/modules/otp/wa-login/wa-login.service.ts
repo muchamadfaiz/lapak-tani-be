@@ -3,6 +3,7 @@ import { ConfigType } from '@nestjs/config';
 import { randomInt } from 'crypto';
 import { normalizePhone } from '../../../common';
 import waLoginConfig from '../../../config/wa-login.config';
+import { SettingContract } from '../../setting';
 import { OtpContract } from '../otp.contract';
 import { FonnteService } from '../whatsapp/fonnte.service';
 import { WaLoginRepository } from './wa-login.repository';
@@ -29,16 +30,20 @@ export class WaLoginService {
   private readonly logger = new Logger(WaLoginService.name);
 
   constructor(
+    // `cfg` kini hanya untuk angka penyetelan (TTL & panjang kode); nomor WA
+    // bisnis dan secret webhook pindah ke pengaturan agar bisa diganti admin.
     @Inject(waLoginConfig.KEY)
     private readonly cfg: ConfigType<typeof waLoginConfig>,
     private readonly repo: WaLoginRepository,
     private readonly otp: OtpContract,
     private readonly fonnte: FonnteService,
+    private readonly settings: SettingContract,
   ) {}
 
   /** 1) App minta sesi login → dapat kode + link wa.me siap dibuka. */
   async start(): Promise<WaLoginStart> {
-    const businessNumber = normalizePhone(this.cfg.businessNumber || '');
+    const { waBusinessNumber } = await this.settings.getOtpCredentials();
+    const businessNumber = normalizePhone(waBusinessNumber || '');
     if (!businessNumber) {
       throw new BadRequestException('Login WhatsApp belum dikonfigurasi');
     }

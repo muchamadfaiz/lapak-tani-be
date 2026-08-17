@@ -3,15 +3,13 @@ import {
   Controller,
   ForbiddenException,
   Get,
-  Inject,
   Post,
   Query,
 } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public, ResponseMessage } from '../../../common';
-import waLoginConfig from '../../../config/wa-login.config';
+import { SettingContract } from '../../setting';
 import { WaLoginService } from './wa-login.service';
 
 @ApiTags('WA Login')
@@ -19,8 +17,7 @@ import { WaLoginService } from './wa-login.service';
 export class WaLoginController {
   constructor(
     private readonly svc: WaLoginService,
-    @Inject(waLoginConfig.KEY)
-    private readonly cfg: ConfigType<typeof waLoginConfig>,
+    private readonly settings: SettingContract,
   ) {}
 
   @Public()
@@ -44,12 +41,13 @@ export class WaLoginController {
   @Public()
   @Post('webhook')
   @ApiOperation({ summary: 'Webhook pesan masuk WhatsApp (dipanggil Fonnte)' })
-  webhook(
+  async webhook(
     @Query('token') token: string | undefined,
     @Body() body: Record<string, unknown>,
   ) {
     // Secret cegah pemalsuan. URL webhook di Fonnte: .../webhook?token=SECRET
-    if (this.cfg.webhookToken && token !== this.cfg.webhookToken) {
+    const { waLoginWebhookToken } = await this.settings.getOtpCredentials();
+    if (waLoginWebhookToken && token !== waLoginWebhookToken) {
       throw new ForbiddenException('Invalid webhook token');
     }
     // Fonnte incoming: nama field bisa beda-beda → toleran.

@@ -10,8 +10,11 @@ export interface RequestOtpResult {
  * pembeli, auth untuk 2FA) tanpa tahu detail penyimpanan/pengiriman.
  */
 export abstract class OtpContract {
-  /** Apakah fitur OTP aktif (OTP_ENABLED). */
-  abstract get enabled(): boolean;
+  /**
+   * Apakah fitur OTP aktif. Asinkron karena setelannya dibaca dari pengaturan
+   * (dashboard admin), bukan lagi dari env saat booting.
+   */
+  abstract isEnabled(): Promise<boolean>;
 
   /** Buat & kirim OTP ke No HP (via WhatsApp). */
   abstract requestOtp(phone: string, purpose?: string): Promise<RequestOtpResult>;

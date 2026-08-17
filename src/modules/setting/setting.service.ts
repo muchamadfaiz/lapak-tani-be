@@ -10,6 +10,8 @@ import {
   BusinessRules,
   CHAT_LANGUAGES,
   ChatLanguage,
+  OtpChannel,
+  OtpCredentials,
   PublicPaymentSettings,
   PublicSettings,
   SECRET_SETTING_KEYS,
@@ -139,6 +141,119 @@ export class SettingService extends SettingContract {
       await this.simpan(key, String(value));
     }
     return this.getAll();
+  }
+
+  // ── Pengirim OTP WhatsApp (Fonnte) ────────────────────────────────────────
+
+  async getOtpCredentials(): Promise<OtpCredentials> {
+    const map = await this.repo.findMany([
+      SETTING_KEYS.otpEnabled,
+      SETTING_KEYS.otpChannel,
+      SETTING_KEYS.fonnteToken,
+      SETTING_KEYS.waBusinessNumber,
+      SETTING_KEYS.waLoginWebhookToken,
+    ]);
+
+    // Aturan cadangan sama seperti Xendit: env hanya dipakai selama BARISNYA
+    // belum ada. Begitu admin pernah menyimpan, isinya dipatuhi apa adanya.
+    const enabledRaw = map.get(SETTING_KEYS.otpEnabled);
+    const channelRaw =
+      map.get(SETTING_KEYS.otpChannel) ?? process.env.OTP_CHANNEL ?? 'whatsapp';
+    const tokenRow = map.get(SETTING_KEYS.fonnteToken);
+    const webhookRow = map.get(SETTING_KEYS.waLoginWebhookToken);
+
+    return {
+      enabled:
+        enabledRaw === undefined
+          ? process.env.OTP_ENABLED === 'true'
+          : enabledRaw === 'true',
+      // Nilai asing (mis. salah ketik di env) jangan sampai mematikan OTP
+      // diam-diam — jatuhkan ke 'whatsapp', kanal yang memang dipakai.
+      channel: (['whatsapp', 'sms', 'screen'] as const).includes(
+        channelRaw as OtpChannel,
+      )
+        ? (channelRaw as OtpChannel)
+        : 'whatsapp',
+      fonnteToken:
+        tokenRow === undefined
+          ? process.env.FONNTE_TOKEN || ''
+          : dekripsiRahasia(tokenRow),
+      waBusinessNumber:
+        map.get(SETTING_KEYS.waBusinessNumber) ??
+        process.env.WA_BUSINESS_NUMBER ??
+        '',
+      waLoginWebhookToken:
+        webhookRow === undefined
+          ? process.env.WA_LOGIN_WEBHOOK_TOKEN || ''
+          : dekripsiRahasia(webhookRow),
+    };
+  }
+
+  /** Bentuk yang boleh dilihat admin: token hanya 4 karakter terakhir. */
+  async getOtpAdminView(): Promise<{
+    enabled: boolean;
+    channel: OtpChannel;
+    /** true bila kanal saat ini diatur lewat env dan tak ada di pilihan dashboard. */
+    channelManagedByServer: boolean;
+    fonnteTokenMasked: string;
+    fonnteTokenConfigured: boolean;
+    waBusinessNumber: string;
+    waLoginWebhookTokenMasked: string;
+    waLoginWebhookTokenConfigured: boolean;
+    encryptionActive: boolean;
+    credentialsUpdatedAt: string | null;
+  }> {
+    const c = await this.getOtpCredentials();
+    const terakhir = await this.repo.findLastUpdatedAt([
+      SETTING_KEYS.fonnteToken,
+      SETTING_KEYS.waLoginWebhookToken,
+    ]);
+    return {
+      enabled: c.enabled,
+      channel: c.channel,
+      channelManagedByServer: c.channel === 'sms',
+      fonnteTokenMasked: samarkanRahasia(c.fonnteToken),
+      fonnteTokenConfigured: c.fonnteToken.length > 0,
+      waBusinessNumber: c.waBusinessNumber,
+      waLoginWebhookTokenMasked: samarkanRahasia(c.waLoginWebhookToken),
+      waLoginWebhookTokenConfigured: c.waLoginWebhookToken.length > 0,
+      encryptionActive: enkripsiAktif(),
+      credentialsUpdatedAt: terakhir ? terakhir.toISOString() : null,
+    };
+  }
+
+  /**
+   * Simpan kredensial OTP. Aturan sama seperti Xendit: field `undefined` tidak
+   * disentuh, dan dua token rahasia menganggap string kosong sebagai "biarkan
+   * yang lama" — kirim `__CLEAR__` untuk benar-benar menghapus.
+   */
+  async updateOtp(patch: {
+    enabled?: boolean;
+    channel?: string;
+    fonnteToken?: string;
+    waBusinessNumber?: string;
+    waLoginWebhookToken?: string;
+  }): Promise<void> {
+    if (patch.enabled !== undefined) {
+      await this.simpan(SETTING_KEYS.otpEnabled, String(patch.enabled));
+    }
+    if (patch.channel !== undefined) {
+      await this.simpan(SETTING_KEYS.otpChannel, patch.channel);
+    }
+    if (patch.waBusinessNumber !== undefined) {
+      await this.simpan(
+        SETTING_KEYS.waBusinessNumber,
+        patch.waBusinessNumber.trim(),
+      );
+    }
+    for (const [field, key] of [
+      ['fonnteToken', SETTING_KEYS.fonnteToken],
+      ['waLoginWebhookToken', SETTING_KEYS.waLoginWebhookToken],
+    ] as const) {
+      const nilai = patch[field];
+      if (nilai === undefined || nilai === '') continue; // kosong = jangan ubah
+      await this.simpan(key, nilai === '__CLEAR__' ? '' : nilai.trim());
+    }
   }
 
   // ── Gerbang pembayaran (Xendit) ───────────────────────────────────────────
