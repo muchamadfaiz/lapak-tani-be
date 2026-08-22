@@ -12,6 +12,9 @@ export abstract class PaymentContract {
     amount: number,
   ): Promise<{ qrString: string; qrId: string; expiresAt: string | null }>;
 
-  /** True bila Xendit dalam mode sandbox (untuk fitur simulasi bayar saat demo). */
-  abstract isSandbox(): boolean;
+  /**
+   * True bila Xendit dalam mode sandbox (untuk fitur simulasi bayar saat demo).
+   * Asinkron karena kunci dibaca dari pengaturan, bukan dari env saat booting.
+   */
+  abstract isSandbox(): Promise<boolean>;
 }

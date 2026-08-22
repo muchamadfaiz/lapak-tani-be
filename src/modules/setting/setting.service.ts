@@ -1,13 +1,23 @@
 import { Injectable } from '@nestjs/common';
+import {
+  dekripsiRahasia,
+  enkripsiAktif,
+  enkripsiRahasia,
+  samarkanRahasia,
+} from '../../common/utils';
 import { SettingRepository } from './repository/setting.repository';
 import {
   BusinessRules,
   CHAT_LANGUAGES,
   ChatLanguage,
+  OtpChannel,
+  OtpCredentials,
   PublicPaymentSettings,
   PublicSettings,
+  SECRET_SETTING_KEYS,
   SETTING_KEYS,
   SettingContract,
+  XenditCredentials,
 } from './setting.contract';
 
 /** Nilai bawaan bila admin belum pernah menyimpan pengaturan. */
@@ -110,15 +120,283 @@ export class SettingService extends SettingContract {
       : 'id';
   }
 
+  /**
+   * Tulis satu pengaturan. Nilai yang tergolong rahasia dienkripsi lebih dulu —
+   * satu-satunya jalan menulis ke tabel, jadi tidak mungkin ada rahasia yang
+   * lolos tersimpan sebagai teks biasa karena lupa dienkripsi di pemanggil.
+   */
+  private async simpan(key: string, value: string): Promise<void> {
+    const nilai = SECRET_SETTING_KEYS.includes(key)
+      ? enkripsiRahasia(value)
+      : value;
+    await this.repo.upsert(key, nilai);
+  }
+
   async update(patch: Record<string, string>): Promise<Record<string, string>> {
     // Perubahan harus langsung terasa, jangan menunggu TTL habis.
     this.rulesCache = null;
     const known = new Set<string>(Object.values(SETTING_KEYS));
     for (const [key, value] of Object.entries(patch)) {
       if (!known.has(key)) continue; // abaikan key asing (anti-sampah)
-      await this.repo.upsert(key, String(value));
+      await this.simpan(key, String(value));
     }
     return this.getAll();
+  }
+
+  // ── Pengirim OTP WhatsApp (Fonnte) ────────────────────────────────────────
+
+  async getOtpCredentials(): Promise<OtpCredentials> {
+    const map = await this.repo.findMany([
+      SETTING_KEYS.otpEnabled,
+      SETTING_KEYS.otpChannel,
+      SETTING_KEYS.fonnteToken,
+      SETTING_KEYS.waBusinessNumber,
+      SETTING_KEYS.waLoginWebhookToken,
+    ]);
+
+    // Aturan cadangan sama seperti Xendit: env hanya dipakai selama BARISNYA
+    // belum ada. Begitu admin pernah menyimpan, isinya dipatuhi apa adanya.
+    const enabledRaw = map.get(SETTING_KEYS.otpEnabled);
+    const channelRaw =
+      map.get(SETTING_KEYS.otpChannel) ?? process.env.OTP_CHANNEL ?? 'whatsapp';
+    const tokenRow = map.get(SETTING_KEYS.fonnteToken);
+    const webhookRow = map.get(SETTING_KEYS.waLoginWebhookToken);
+
+    return {
+      enabled:
+        enabledRaw === undefined
+          ? process.env.OTP_ENABLED === 'true'
+          : enabledRaw === 'true',
+      // Nilai asing (mis. salah ketik di env) jangan sampai mematikan OTP
+      // diam-diam — jatuhkan ke 'whatsapp', kanal yang memang dipakai.
+      channel: (['whatsapp', 'sms', 'screen'] as const).includes(
+        channelRaw as OtpChannel,
+      )
+        ? (channelRaw as OtpChannel)
+        : 'whatsapp',
+      fonnteToken:
+        tokenRow === undefined
+          ? process.env.FONNTE_TOKEN || ''
+          : dekripsiRahasia(tokenRow),
+      waBusinessNumber:
+        map.get(SETTING_KEYS.waBusinessNumber) ??
+        process.env.WA_BUSINESS_NUMBER ??
+        '',
+      waLoginWebhookToken:
+        webhookRow === undefined
+          ? process.env.WA_LOGIN_WEBHOOK_TOKEN || ''
+          : dekripsiRahasia(webhookRow),
+    };
+  }
+
+  /** Bentuk yang boleh dilihat admin: token hanya 4 karakter terakhir. */
+  async getOtpAdminView(): Promise<{
+    enabled: boolean;
+    channel: OtpChannel;
+    /** true bila kanal saat ini diatur lewat env dan tak ada di pilihan dashboard. */
+    channelManagedByServer: boolean;
+    fonnteTokenMasked: string;
+    fonnteTokenConfigured: boolean;
+    waBusinessNumber: string;
+    waLoginWebhookTokenMasked: string;
+    waLoginWebhookTokenConfigured: boolean;
+    encryptionActive: boolean;
+    credentialsUpdatedAt: string | null;
+  }> {
+    const c = await this.getOtpCredentials();
+    const terakhir = await this.repo.findLastUpdatedAt([
+      SETTING_KEYS.fonnteToken,
+      SETTING_KEYS.waLoginWebhookToken,
+    ]);
+    return {
+      enabled: c.enabled,
+      channel: c.channel,
+      channelManagedByServer: c.channel === 'sms',
+      fonnteTokenMasked: samarkanRahasia(c.fonnteToken),
+      fonnteTokenConfigured: c.fonnteToken.length > 0,
+      waBusinessNumber: c.waBusinessNumber,
+      waLoginWebhookTokenMasked: samarkanRahasia(c.waLoginWebhookToken),
+      waLoginWebhookTokenConfigured: c.waLoginWebhookToken.length > 0,
+      encryptionActive: enkripsiAktif(),
+      credentialsUpdatedAt: terakhir ? terakhir.toISOString() : null,
+    };
+  }
+
+  /**
+   * Simpan kredensial OTP. Aturan sama seperti Xendit: field `undefined` tidak
+   * disentuh, dan dua token rahasia menganggap string kosong sebagai "biarkan
+   * yang lama" — kirim `__CLEAR__` untuk benar-benar menghapus.
+   */
+  async updateOtp(patch: {
+    enabled?: boolean;
+    channel?: string;
+    fonnteToken?: string;
+    waBusinessNumber?: string;
+    waLoginWebhookToken?: string;
+  }): Promise<void> {
+    if (patch.enabled !== undefined) {
+      await this.simpan(SETTING_KEYS.otpEnabled, String(patch.enabled));
+    }
+    if (patch.channel !== undefined) {
+      await this.simpan(SETTING_KEYS.otpChannel, patch.channel);
+    }
+    if (patch.waBusinessNumber !== undefined) {
+      await this.simpan(
+        SETTING_KEYS.waBusinessNumber,
+        patch.waBusinessNumber.trim(),
+      );
+    }
+    for (const [field, key] of [
+      ['fonnteToken', SETTING_KEYS.fonnteToken],
+      ['waLoginWebhookToken', SETTING_KEYS.waLoginWebhookToken],
+    ] as const) {
+      const nilai = patch[field];
+      if (nilai === undefined || nilai === '') continue; // kosong = jangan ubah
+      await this.simpan(key, nilai === '__CLEAR__' ? '' : nilai.trim());
+    }
+  }
+
+  // ── Gerbang pembayaran (Xendit) ───────────────────────────────────────────
+
+  async getXenditCredentials(): Promise<XenditCredentials> {
+    const map = await this.repo.findMany([
+      SETTING_KEYS.xenditEnabled,
+      SETTING_KEYS.xenditSecretKey,
+      SETTING_KEYS.xenditCallbackToken,
+      SETTING_KEYS.xenditInvoiceDurationSec,
+      SETTING_KEYS.paymentSuccessUrl,
+      SETTING_KEYS.paymentFailureUrl,
+    ]);
+
+    // Env hanya dipakai bila BARISNYA BELUM ADA — artinya admin belum pernah
+    // menyentuh field itu. Begitu ada baris, isinya dipatuhi apa adanya,
+    // termasuk bila sengaja dikosongkan: kalau tidak, admin yang menghapus
+    // kunci akan diam-diam diisi ulang oleh env dan mengira kuncinya terhapus.
+    const enabledRaw = map.get(SETTING_KEYS.xenditEnabled);
+    const secretRow = map.get(SETTING_KEYS.xenditSecretKey);
+    const secretKey =
+      secretRow === undefined
+        ? process.env.XENDIT_SECRET_KEY || ''
+        : dekripsiRahasia(secretRow);
+    const tokenRow = map.get(SETTING_KEYS.xenditCallbackToken);
+    const callbackToken =
+      tokenRow === undefined
+        ? process.env.XENDIT_CALLBACK_TOKEN || ''
+        : dekripsiRahasia(tokenRow);
+    const durasiRaw =
+      map.get(SETTING_KEYS.xenditInvoiceDurationSec) ??
+      process.env.XENDIT_INVOICE_DURATION_SEC;
+
+    return {
+      enabled:
+        enabledRaw === undefined
+          ? process.env.XENDIT_ENABLED === 'true'
+          : enabledRaw === 'true',
+      secretKey,
+      callbackToken,
+      // Minimal 1 jam: invoice yang kedaluwarsa dalam hitungan detik hanya
+      // menghasilkan order gagal bayar.
+      invoiceDurationSec: Math.max(
+        3600,
+        SettingService.angka(durasiRaw, 86400),
+      ),
+      successRedirectUrl:
+        map.get(SETTING_KEYS.paymentSuccessUrl) ??
+        process.env.PAYMENT_SUCCESS_URL ??
+        '',
+      failureRedirectUrl:
+        map.get(SETTING_KEYS.paymentFailureUrl) ??
+        process.env.PAYMENT_FAILURE_URL ??
+        '',
+    };
+  }
+
+  /**
+   * Bentuk kredensial yang boleh dilihat admin di dashboard: kunci hanya
+   * ditampilkan 4 karakter terakhir. Nilai penuh tidak pernah keluar server.
+   */
+  async getXenditAdminView(): Promise<{
+    enabled: boolean;
+    secretKeyMasked: string;
+    secretKeyConfigured: boolean;
+    callbackTokenMasked: string;
+    callbackTokenConfigured: boolean;
+    invoiceDurationSec: number;
+    successRedirectUrl: string;
+    failureRedirectUrl: string;
+    mode: 'test' | 'live' | 'unset';
+    encryptionActive: boolean;
+    /** ISO, atau null bila kredensial masih berasal dari env server. */
+    credentialsUpdatedAt: string | null;
+  }> {
+    const c = await this.getXenditCredentials();
+    const terakhir = await this.repo.findLastUpdatedAt([
+      SETTING_KEYS.xenditSecretKey,
+      SETTING_KEYS.xenditCallbackToken,
+    ]);
+    return {
+      credentialsUpdatedAt: terakhir ? terakhir.toISOString() : null,
+      enabled: c.enabled,
+      secretKeyMasked: samarkanRahasia(c.secretKey),
+      secretKeyConfigured: c.secretKey.length > 0,
+      callbackTokenMasked: samarkanRahasia(c.callbackToken),
+      callbackTokenConfigured: c.callbackToken.length > 0,
+      invoiceDurationSec: c.invoiceDurationSec,
+      successRedirectUrl: c.successRedirectUrl,
+      failureRedirectUrl: c.failureRedirectUrl,
+      mode: !c.secretKey
+        ? 'unset'
+        : c.secretKey.startsWith('xnd_development')
+          ? 'test'
+          : 'live',
+      encryptionActive: enkripsiAktif(),
+    };
+  }
+
+  /**
+   * Simpan kredensial gerbang. Field yang `undefined` tidak disentuh; khusus
+   * dua kunci rahasia, string kosong juga berarti "biarkan yang lama" — kalau
+   * tidak, admin yang menekan Simpan setelah mengubah hal lain akan menghapus
+   * kunci pembayaran tanpa sadar (form memang tidak pernah memuat nilai asli).
+   * Untuk benar-benar menghapus, kirim nilai khusus `__CLEAR__`.
+   */
+  async updateXendit(patch: {
+    enabled?: boolean;
+    secretKey?: string;
+    callbackToken?: string;
+    invoiceDurationSec?: number;
+    successRedirectUrl?: string;
+    failureRedirectUrl?: string;
+  }): Promise<void> {
+    if (patch.enabled !== undefined) {
+      await this.simpan(SETTING_KEYS.xenditEnabled, String(patch.enabled));
+    }
+    for (const [field, key] of [
+      ['secretKey', SETTING_KEYS.xenditSecretKey],
+      ['callbackToken', SETTING_KEYS.xenditCallbackToken],
+    ] as const) {
+      const nilai = patch[field];
+      if (nilai === undefined || nilai === '') continue; // kosong = jangan ubah
+      await this.simpan(key, nilai === '__CLEAR__' ? '' : nilai.trim());
+    }
+    if (patch.invoiceDurationSec !== undefined) {
+      await this.simpan(
+        SETTING_KEYS.xenditInvoiceDurationSec,
+        String(patch.invoiceDurationSec),
+      );
+    }
+    if (patch.successRedirectUrl !== undefined) {
+      await this.simpan(
+        SETTING_KEYS.paymentSuccessUrl,
+        patch.successRedirectUrl.trim(),
+      );
+    }
+    if (patch.failureRedirectUrl !== undefined) {
+      await this.simpan(
+        SETTING_KEYS.paymentFailureUrl,
+        patch.failureRedirectUrl.trim(),
+      );
+    }
   }
 
   async isOnlinePaymentEnabled(): Promise<boolean> {
@@ -128,10 +406,30 @@ export class SettingService extends SettingContract {
     return raw === undefined ? true : raw === 'true';
   }
 
-  async getPublicPaymentSettings(): Promise<PublicPaymentSettings> {
+  /**
+   * True bila gerbang benar-benar siap menerima pembayaran: dinyalakan admin
+   * DAN kuncinya terisi. Dipakai untuk memastikan storefront tidak pernah
+   * menawarkan "Bayar Online" yang pasti gagal.
+   */
+  private async gerbangSiap(): Promise<boolean> {
+    const c = await this.getXenditCredentials();
+    return c.enabled && c.secretKey.length > 0;
+  }
+
+  /**
+   * @param efektif true (bawaan) = untuk pelanggan: `onlinePaymentEnabled`
+   * digabung dengan kesiapan gerbang, sehingga opsi bayar online hanya muncul
+   * bila benar-benar bisa dipakai. false = untuk dashboard admin: kembalikan
+   * NIAT admin apa adanya, kalau tidak sakelarnya akan terlihat mati sendiri
+   * saat kredensial belum diisi.
+   */
+  async getPublicPaymentSettings(efektif = true): Promise<PublicPaymentSettings> {
     const all = await this.getAll();
+    const niat = all[SETTING_KEYS.onlinePaymentEnabled] === 'true';
+    // Untuk admin: niat apa adanya. Untuk pelanggan: niat DAN gerbang siap.
+    const online = !efektif ? niat : niat && (await this.gerbangSiap());
     return {
-      onlinePaymentEnabled: all[SETTING_KEYS.onlinePaymentEnabled] === 'true',
+      onlinePaymentEnabled: online,
       bankName: all[SETTING_KEYS.bankName],
       bankAccountNumber: all[SETTING_KEYS.bankAccountNumber],
       bankAccountName: all[SETTING_KEYS.bankAccountName],
@@ -139,11 +437,11 @@ export class SettingService extends SettingContract {
   }
 
   /** Pembayaran + bilah promo, untuk storefront & halaman pengaturan admin. */
-  async getPublicSettings(): Promise<PublicSettings> {
+  async getPublicSettings(efektif = true): Promise<PublicSettings> {
     const all = await this.getAll();
     const title = all[SETTING_KEYS.promoBarTitle].trim();
     return {
-      ...(await this.getPublicPaymentSettings()),
+      ...(await this.getPublicPaymentSettings(efektif)),
       promoBar: {
         // Judul kosong = tak ada yang bisa ditampilkan, jadi anggap mati
         // walau saklarnya menyala. Storefront tak perlu memeriksa dua hal.

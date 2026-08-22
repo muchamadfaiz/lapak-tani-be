@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { normalizePhone } from '../../common';
 import otpConfig from '../../config/otp.config';
 import jwtConfig from '../../config/jwt.config';
+import { SettingContract } from '../setting';
 import { OtpRepository } from './repository/otp.repository';
 import { FonnteService } from './whatsapp/fonnte.service';
 import { TwilioService } from './sms/twilio.service';
@@ -23,6 +24,10 @@ export class OtpService extends OtpContract {
   private readonly isProd = process.env.NODE_ENV === 'production';
 
   constructor(
+    // `cfg` kini HANYA untuk angka penyetelan (panjang kode, TTL, jumlah
+    // percobaan, jeda kirim ulang) dan kredensial Twilio — semuanya tetap di
+    // env karena itu ranah developer, bukan pemilik toko. Saklar aktif,
+    // pilihan kanal, dan token Fonnte pindah ke pengaturan.
     @Inject(otpConfig.KEY)
     private readonly cfg: ConfigType<typeof otpConfig>,
     @Inject(jwtConfig.KEY)
@@ -31,12 +36,14 @@ export class OtpService extends OtpContract {
     private readonly repo: OtpRepository,
     private readonly fonnte: FonnteService,
     private readonly twilio: TwilioService,
+    private readonly settings: SettingContract,
   ) {
     super();
   }
 
-  get enabled(): boolean {
-    return this.cfg.enabled;
+  async isEnabled(): Promise<boolean> {
+    const { enabled } = await this.settings.getOtpCredentials();
+    return enabled;
   }
 
   async requestOtp(rawPhone: string, purpose = 'verify'): Promise<RequestOtpResult> {
@@ -69,9 +76,10 @@ export class OtpService extends OtpContract {
     // - whatsapp → Fonnte, sms → Twilio (keduanya benar-benar kirim ke pemilik nomor)
     // - screen   → TIDAK kirim; kode dikembalikan di response (DEMO, tak aman)
     let sent = false;
-    if (this.cfg.enabled && this.cfg.channel !== 'screen') {
+    const { enabled, channel } = await this.settings.getOtpCredentials();
+    if (enabled && channel !== 'screen') {
       const msg = `Kode OTP Lapak Tani kamu: ${code}. Berlaku ${this.cfg.ttlMinutes} menit. Jangan beri tahu siapa pun.`;
-      if (this.cfg.channel === 'sms') {
+      if (channel === 'sms') {
         await this.twilio.sendMessage(phone, msg);
       } else {
         await this.fonnte.sendMessage(phone, msg);
@@ -80,7 +88,7 @@ export class OtpService extends OtpContract {
     }
 
     // Kode dikembalikan di response saat: non-production (dev), ATAU channel=screen.
-    const exposeCode = !this.isProd || this.cfg.channel === 'screen';
+    const exposeCode = !this.isProd || channel === 'screen';
     return {
       sent,
       expiresInSec: this.cfg.ttlMinutes * 60,

@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import xenditConfig from '../../config/xendit.config';
 import { OrderModule } from '../order';
 import { SettingModule } from '../setting';
 import { PaymentController } from './payment.controller';
@@ -9,7 +7,9 @@ import { PaymentService } from './payment.service';
 import { XenditService } from './xendit.service';
 
 @Module({
-  imports: [ConfigModule.forFeature(xenditConfig), OrderModule, SettingModule],
+  // Kredensial Xendit kini tinggal di modul Setting (tabel `settings`), bukan
+  // di ConfigModule — supaya bisa diganti dari dashboard tanpa restart server.
+  imports: [OrderModule, SettingModule],
   controllers: [PaymentController],
   providers: [
     XenditService,
