@@ -82,7 +82,7 @@ export class WaLoginService {
       .sendMessage(
         phone,
         '✅ Berhasil! Nomor WhatsApp kamu sudah terverifikasi.\n' +
-          'Silakan kembali ke aplikasi Lapak Tani untuk melanjutkan.\n\n' +
+          'Silakan kembali ke aplikasi untuk melanjutkan.\n\n' +
           '(Jangan bagikan pesan ini ke siapa pun.)',
       )
       .catch((e) => this.logger.warn(`Gagal kirim balasan WA: ${e}`));
